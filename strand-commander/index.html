@@ -300,6 +300,11 @@ const keys = {};
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
   if (e.code === 'Space') e.preventDefault();
+  // SPACE or ENTER restarts when overlay is showing (game over / victory)
+  if ((e.code === 'Space' || e.code === 'Enter') && !gameRunning) {
+    const ov = document.getElementById('overlay');
+    if (ov && ov.style.display === 'flex') restartGame();
+  }
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 
@@ -463,9 +468,13 @@ function update() {
   if (strands.length === 0 || strands.every(s => s.length === 0)) {
     score += 500 * level;
     level++;
-    SFX.levelUp();
-    levelUpActive = true;
-    levelUpTimer  = LEVELUP_FRAMES;
+    if (level > THEMES.length) {
+      victoryGame();
+    } else {
+      SFX.levelUp();
+      levelUpActive = true;
+      levelUpTimer  = LEVELUP_FRAMES;
+    }
   }
 }
 
@@ -778,10 +787,48 @@ function gameOver() {
     Final Score: <strong style="color:#FA5185">${score.toLocaleString()}</strong><br>
     High Score: <strong style="color:#015A42">${hiScore.toLocaleString()}</strong><br><br>
     <em style="color:#F8EEE5aa; font-size:12px;">"Confidence behind the chair starts here."</em></p>
-    <button id="start-btn" onclick="startGame()">Try Again</button>
-    <div id="controls-hint">← → MOVE &nbsp;|&nbsp; SPACE SHOOT</div>
+    <button id="start-btn" onclick="restartGame()">Try Again</button>
+    <div id="controls-hint">SPACE or ENTER to restart</div>
   `;
   ov.style.display = 'flex';
+}
+
+function victoryGame() {
+  gameRunning = false;
+  cancelAnimationFrame(animId);
+  // Victory fanfare — ascending chords
+  [523, 659, 784, 1047].forEach((f, i) => beep(f, f * 1.1, 0.25, 0.2, 'sine', i * 0.15));
+  if (score > hiScore) {
+    hiScore = score;
+    localStorage.setItem('hbbu_hi', hiScore);
+  }
+  const ov = document.getElementById('overlay');
+  const newRecord = score >= hiScore ? `<br><strong style="color:#C8A96E">✦ NEW HIGH SCORE! ✦</strong>` : '';
+  ov.innerHTML = `
+    <div class="tagline">✦ MASTER STYLIST CERTIFIED ✦</div>
+    <h2 style="color:#C8A96E; text-shadow: 0 0 20px #C8A96E, 0 0 40px #C8A96E;">YOU WON!</h2>
+    <p>All 9 levels conquered, babe!<br><br>
+    Final Score: <strong style="color:#FA5185">${score.toLocaleString()}</strong>${newRecord}<br>
+    High Score: <strong style="color:#015A42">${hiScore.toLocaleString()}</strong><br><br>
+    <em style="color:#F8EEE5aa; font-size:12px;">"Confidence behind the chair starts here."</em></p>
+    <button id="start-btn" onclick="restartGame()">Play Again</button>
+    <div id="controls-hint">SPACE or ENTER to restart</div>
+  `;
+  ov.style.display = 'flex';
+}
+
+function restartGame() {
+  score = 0; lives = 3; level = 1;
+  activePU = null; dangerFlash = 0; shakeX = 0; shakeY = 0;
+  bullets = []; particles = []; powerUps = [];
+  strands = []; bottles = [];
+  spider = null; flea = null; scorpion = null;
+  const ov = document.getElementById('overlay');
+  ov.style.display = 'none';
+  initLevel();
+  gameRunning = true;
+  if (animId) cancelAnimationFrame(animId);
+  loop();
 }
 
 // ══════════════════════════════════════════════════════
@@ -1154,7 +1201,7 @@ ctx.fillStyle = CLR.dark; ctx.fillRect(0,0,W,H);
 //  RESPONSIVE SCALING — works standalone + in WP iframe
 // ══════════════════════════════════════════════════════
 const GAME_NATURAL_W = 564;
-const GAME_NATURAL_H = 848; // logo+title+hud+bar+canvas total
+const GAME_NATURAL_H = 820; // logo+title+hud+bar+canvas total
 
 function scaleGame() {
   const root  = document.getElementById('game-root');
