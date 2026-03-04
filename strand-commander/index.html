@@ -6,17 +6,42 @@
 <title>Strand Commander – HBBU Arcade</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
+
+  /* ── WordPress-friendly body ─────────────────────────
+     No min-height, no overflow:hidden — sits cleanly
+     inside any WP page/post content column.          */
+  html, body {
     background: #171411;
+    font-family: 'Courier New', monospace;
+    overflow-x: hidden;
+    touch-action: none;
+    width: 100%;
+  }
+
+  /* ── Outer centering shell ───────────────────────── */
+  #game-shell {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    background: #171411;
+    padding: 8px 0 16px;
+  }
+
+  /* ── Root container — scaled by JS ──────────────────
+     Natural game width = 564px (560 canvas + 2px border each side).
+     JS sets transform:scale() so everything shrinks together
+     on narrow screens without breaking coordinates.   */
+  #game-root {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    font-family: 'Courier New', monospace;
-    overflow: hidden;
-    touch-action: none;
+    width: 564px;
+    transform-origin: top center;
+    /* transition keeps resize smooth */
+    transition: transform 0.15s ease;
   }
+
   #hbbu-logo-wrap {
     margin-bottom: 8px;
     text-align: center;
@@ -31,15 +56,17 @@
     text-shadow: 0 0 20px #FA5185, 0 0 40px #FA5185;
     margin-bottom: 8px;
     text-align: center;
+    white-space: nowrap;
   }
   #hud {
     display: flex;
     gap: 32px;
     margin-bottom: 8px;
-    font-size: 14px;
     letter-spacing: 2px;
     color: #F8EEE5;
     align-items: flex-end;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   .hud-item { text-align: center; }
   .hud-label { color: #FA5185; font-size: 10px; display: block; letter-spacing: 2px; }
@@ -51,12 +78,13 @@
     letter-spacing: 2px;
     color: #F8EEE5aa;
     text-align: center;
-    min-width: 560px;
+    width: 564px;
   }
   #canvas-wrap {
     position: relative;
     border: 2px solid #FA5185;
     box-shadow: 0 0 30px #FA518580, 0 0 60px #FA518530;
+    /* canvas is fixed 560×620 — scaling done by #game-root */
   }
   canvas { display: block; }
   #overlay {
@@ -70,6 +98,7 @@
     color: #F8EEE5;
     text-align: center;
     gap: 14px;
+    padding: 20px;
   }
   #overlay h2 {
     font-size: 36px;
@@ -95,11 +124,13 @@
     transition: all 0.2s;
     box-shadow: 0 0 20px #FA518580;
   }
-  #start-btn:hover { background: #FF0D58; box-shadow: 0 0 30px #FF0D58; transform: scale(1.05); }
+  #start-btn:hover  { background: #FF0D58; box-shadow: 0 0 30px #FF0D58; transform: scale(1.05); }
   #controls-hint { font-size: 11px; color: #F8EEE5aa; letter-spacing: 1px; }
 </style>
 </head>
 <body>
+<div id="game-shell">
+<div id="game-root">
 
 <!-- Hair B&B University Logo -->
 <div id="hbbu-logo-wrap">
@@ -133,7 +164,9 @@
     <button id="start-btn" onclick="startGame()">Start Styling</button>
     <div id="controls-hint">← → MOVE &nbsp;|&nbsp; SPACE SHOOT &nbsp;|&nbsp; Touch supported</div>
   </div>
-</div>
+</div><!-- /canvas-wrap -->
+</div><!-- /game-root -->
+</div><!-- /game-shell -->
 
 <script>
 // ══════════════════════════════════════════════════════
@@ -1109,6 +1142,38 @@ function dist(ax,ay,bx,by) { return Math.sqrt((ax-bx)**2+(ay-by)**2); }
 
 // Initial blank frame
 ctx.fillStyle = CLR.dark; ctx.fillRect(0,0,W,H);
+
+// ══════════════════════════════════════════════════════
+//  RESPONSIVE SCALING — works standalone + in WP iframe
+// ══════════════════════════════════════════════════════
+const GAME_NATURAL_W = 564; // 560px canvas + 2px border × 2
+
+function scaleGame() {
+  const root  = document.getElementById('game-root');
+  const shell = document.getElementById('game-shell');
+
+  // Available width = window width inside the iframe / browser tab
+  const avail = Math.min(window.innerWidth, shell.offsetWidth || window.innerWidth);
+  const scale = Math.min(1, avail / GAME_NATURAL_W);
+
+  root.style.transform = `scale(${scale})`;
+  root.style.transformOrigin = 'top center';
+
+  // Shrink the shell to exactly the scaled height so WP page doesn't show gap
+  const scaledH = Math.ceil(root.offsetHeight * scale);
+  shell.style.height = scaledH + 'px';
+  document.body.style.height = scaledH + 'px';
+
+  // Tell the parent page (WordPress iframe) the correct height
+  try {
+    window.parent.postMessage({ type: 'hbbu-resize', height: scaledH }, '*');
+  } catch(e) {}
+}
+
+window.addEventListener('resize', scaleGame);
+// Run after fonts/images settle
+window.addEventListener('load', scaleGame);
+scaleGame();
 </script>
 </body>
 </html>
