@@ -41,9 +41,11 @@
     align-items: center;
     width: 564px;
     background: #171411;
-    transform-origin: top left;   /* left-anchored = no centering math needed */
+    transform-origin: top left;
     transition: transform 0.1s ease;
     flex-shrink: 0;
+    padding-top: 16px;    /* headspace so logo isn't clipped */
+    padding-bottom: 10px; /* close gap at bottom */
   }
 
   #hbbu-logo-wrap {
@@ -1198,24 +1200,27 @@ ctx.fillStyle = CLR.dark; ctx.fillRect(0,0,W,H);
 //  RESPONSIVE SCALING — works standalone + in WP iframe
 // ══════════════════════════════════════════════════════
 const GAME_NATURAL_W = 564;
-const GAME_NATURAL_H = 820; // logo+title+hud+bar+canvas total
+const GAME_NATURAL_H = 846; // fallback — scaleGame() measures actual scrollHeight
 
 function scaleGame() {
   const root  = document.getElementById('game-root');
   const shell = document.getElementById('game-shell');
 
-  // clientWidth is the reliable iframe-interior width
   const avail = document.documentElement.clientWidth || window.innerWidth || GAME_NATURAL_W;
   const scale = Math.min(1, avail / GAME_NATURAL_W);
 
-  // Anchor to top-left, shift root to center it manually
+  // Measure actual content height before applying transform
+  root.style.transform = 'none';
+  const naturalH = root.scrollHeight || GAME_NATURAL_H;
+
+  // Anchor top-left, center manually
   const offset = Math.max(0, (avail - GAME_NATURAL_W * scale) / 2);
   root.style.transform       = `scale(${scale})`;
   root.style.transformOrigin = 'top left';
   root.style.marginLeft      = offset + 'px';
 
-  // Shell height = exact scaled game height — no dead space
-  const scaledH = Math.ceil(GAME_NATURAL_H * scale);
+  // Shell height = measured content × scale — pixel perfect, no dead space
+  const scaledH = Math.ceil(naturalH * scale);
   shell.style.height         = scaledH + 'px';
   document.body.style.height = scaledH + 'px';
   document.documentElement.style.height = scaledH + 'px';
