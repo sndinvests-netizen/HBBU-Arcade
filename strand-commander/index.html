@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Strand Commander – HBBU Arcade</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,20 +15,12 @@
     min-height: 100vh;
     font-family: 'Courier New', monospace;
     overflow: hidden;
+    touch-action: none;
   }
   #hbbu-logo-wrap {
     margin-bottom: 8px;
     text-align: center;
     filter: drop-shadow(0 0 12px #FA518560);
-  }
-  #logo-text {
-    font-size: 13px;
-    letter-spacing: 3px;
-    color: #FA5185;
-    text-transform: uppercase;
-    font-weight: bold;
-    margin-bottom: 4px;
-    text-align: center;
   }
   #game-title {
     font-size: 28px;
@@ -111,7 +103,8 @@
 
 <!-- Hair B&B University Logo -->
 <div id="hbbu-logo-wrap">
-  <img src="assets/hbbu-logo.png" alt="Hair B&B University Logo" style="height:80px; width:auto; display:block; margin:0 auto;">
+  <img src="assets/hbbu-logo.png" alt="Hair B&B University Logo"
+       style="height:80px; width:auto; display:block; margin:0 auto;">
 </div>
 
 <div id="game-title">Strand Commander</div>
@@ -138,7 +131,7 @@
       <span style="color:#F8EEE580; font-size:11px;">Bonus life every 3 levels · Multiple strands at level 3+</span>
     </p>
     <button id="start-btn" onclick="startGame()">Start Styling</button>
-    <div id="controls-hint">← → MOVE &nbsp;|&nbsp; SPACE SHOOT &nbsp;|&nbsp; A / D also work</div>
+    <div id="controls-hint">← → MOVE &nbsp;|&nbsp; SPACE SHOOT &nbsp;|&nbsp; Touch supported</div>
   </div>
 </div>
 
@@ -151,73 +144,118 @@ const ctx = C.getContext('2d');
 const W = C.width, H = C.height;
 const COLS = 28, ROWS = 31;
 const CS = W / COLS; // 20px
+const MAX_STRAND_SPEED = 4.2; // ② Speed cap
 
 const CLR = {
-  pink:    '#FA5185',
-  hot:     '#FF0D58',
-  green:   '#015A42',
-  dark:    '#171411',
-  cream:   '#F8EEE5',
-  gold:    '#C8A96E',
-  lav:     '#C97DC8',
+  pink:  '#FA5185', hot:   '#FF0D58', green: '#015A42',
+  dark:  '#171411', cream: '#F8EEE5', gold:  '#C8A96E', lav: '#C97DC8',
 };
 
-// ── Level Themes ──────────────────────────────────────
 const THEMES = [
-  { name: 'Babylights',      sub: 'Fine sections — keep it subtle, babe.',       glow: '#FA5185' },
-  { name: 'Balayage',        sub: 'Sun-kissed color, hand-painted to perfection.',glow: '#C8A96E' },
-  { name: 'Color Correction',sub: 'Fix the damage. Own the transformation.',      glow: '#C97DC8' },
-  { name: 'Foilayage',       sub: 'Foils meet balayage — best of both worlds.',   glow: '#015A42' },
-  { name: 'Extensions',      sub: 'Length & volume unlocked. You earned it.',     glow: '#FA5185' },
-  { name: 'Bleach & Tone',   sub: 'Lift it. Tone it. Slay it.',                  glow: '#FF0D58' },
-  { name: 'Root Smudge',     sub: "Seamless root to tip. Chef's kiss.",           glow: '#C8A96E' },
-  { name: 'Gloss & Glaze',   sub: 'Shine, babe. Make them turn heads.',           glow: '#C97DC8' },
-  { name: 'Master Stylist',  sub: 'Behind the chair. No one can stop you.',       glow: '#FF0D58' },
+  { name: 'Babylights',      sub: 'Fine sections — keep it subtle, babe.',        glow: '#FA5185' },
+  { name: 'Balayage',        sub: 'Sun-kissed color, hand-painted to perfection.', glow: '#C8A96E' },
+  { name: 'Color Correction',sub: 'Fix the damage. Own the transformation.',       glow: '#C97DC8' },
+  { name: 'Foilayage',       sub: 'Foils meet balayage — best of both worlds.',    glow: '#015A42' },
+  { name: 'Extensions',      sub: 'Length & volume unlocked. You earned it.',      glow: '#FA5185' },
+  { name: 'Bleach & Tone',   sub: 'Lift it. Tone it. Slay it.',                   glow: '#FF0D58' },
+  { name: 'Root Smudge',     sub: "Seamless root to tip. Chef's kiss.",            glow: '#C8A96E' },
+  { name: 'Gloss & Glaze',   sub: 'Shine, babe. Make them turn heads.',            glow: '#C97DC8' },
+  { name: 'Master Stylist',  sub: 'Behind the chair. No one can stop you.',        glow: '#FF0D58' },
 ];
 function theme(lvl) { return THEMES[Math.min(lvl - 1, THEMES.length - 1)]; }
 
 // ══════════════════════════════════════════════════════
+//  ① OFFSCREEN CANVAS — pre-render static grid
+// ══════════════════════════════════════════════════════
+const gridCanvas = document.createElement('canvas');
+gridCanvas.width = W; gridCanvas.height = H;
+const gCtx = gridCanvas.getContext('2d');
+gCtx.fillStyle = CLR.dark;
+gCtx.fillRect(0, 0, W, H);
+gCtx.strokeStyle = '#F8EEE50A'; gCtx.lineWidth = 0.5;
+for (let x = 0; x < W; x += CS) { gCtx.beginPath(); gCtx.moveTo(x,0); gCtx.lineTo(x,H); gCtx.stroke(); }
+for (let y = 0; y < H; y += CS) { gCtx.beginPath(); gCtx.moveTo(0,y); gCtx.lineTo(W,y); gCtx.stroke(); }
+gCtx.strokeStyle = '#015A4250'; gCtx.lineWidth = 1;
+gCtx.setLineDash([4,4]);
+gCtx.beginPath(); gCtx.moveTo(0, H-CS*3); gCtx.lineTo(W, H-CS*3); gCtx.stroke();
+gCtx.setLineDash([]);
+
+// ══════════════════════════════════════════════════════
+//  ⑥ WEB AUDIO SOUND FX
+// ══════════════════════════════════════════════════════
+let audioCtx = null;
+
+function initAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  }
+}
+
+function beep(freq, endFreq, dur, vol, type = 'sine', startDelay = 0) {
+  if (!audioCtx) return;
+  try {
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    const t = audioCtx.currentTime + startDelay;
+    osc.frequency.setValueAtTime(freq, t);
+    if (endFreq !== freq) osc.frequency.exponentialRampToValueAtTime(endFreq, t + dur);
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.start(t); osc.stop(t + dur + 0.01);
+  } catch(e) {}
+}
+
+const SFX = {
+  shoot:    () => beep(900, 400, 0.06, 0.12, 'sine'),
+  hit:      () => beep(200, 80,  0.10, 0.18, 'square'),
+  bottle:   () => beep(350, 200, 0.07, 0.10, 'sine'),
+  pickup:   () => { beep(600, 1000, 0.12, 0.18); beep(1000, 1400, 0.10, 0.12, 'sine', 0.12); },
+  lifeLost: () => beep(300, 80,  0.4,  0.22, 'sawtooth'),
+  levelUp:  () => [440, 554, 660, 880].forEach((f, i) => beep(f, f*1.05, 0.18, 0.18, 'sine', i*0.12)),
+  gameOver: () => [440, 330, 220, 165].forEach((f, i) => beep(f, f*0.9, 0.22, 0.18, 'sawtooth', i*0.16)),
+  danger:   () => beep(120, 100, 0.15, 0.08, 'square'),
+  spider:   () => { beep(800, 400, 0.12, 0.15, 'square'); },
+  scorpion: () => [200, 150, 100].forEach((f, i) => beep(f, f*0.8, 0.15, 0.2, 'sawtooth', i*0.1)),
+};
+
+// ══════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════
-let score = 0, hiScore = 0, lives = 3, level = 1;
+// ④ Load persisted high score
+let score = 0, lives = 3, level = 1;
+let hiScore = parseInt(localStorage.getItem('hbbu_hi') || '0');
 let gameRunning = false;
 let animId;
 
-// Level-up screen
-let levelUpActive = false;
-let levelUpTimer  = 0;
+let levelUpActive = false, levelUpTimer = 0;
 const LEVELUP_FRAMES = 160;
 
-// Particles
 let particles = [];
-
-// Player
 let player = { x: W/2, y: H - CS*1.5, w: CS*1.8, h: CS*1.2, speed: 5, cooldown: 0 };
-
-// Bullets
-let bullets = [];
-
-// Bottles
-let bottles = [];
-
-// Strands — array of segment arrays (multi-strand support)
-let strands = [];
-
-// Special enemies
+let bullets = [], bottles = [], strands = [];
 let spider = null, flea = null, scorpion = null;
 let spiderTimer = 0, fleaTimer = 0, scorpionTimer = 0;
-
-// Power-ups on field
-let powerUps = [];
-// Active power-up
-let activePU   = null; // { type, timer }
+let powerUps = [], activePU = null;
 const PU_TYPES = ['wide', 'rapid', 'detangle'];
-const PU_DURATION = 420; // 7 seconds
-
-// Invincibility flash after losing life
+const PU_DURATION = 420;
 let invFrames = 0;
 
-// Input
+// ③ Player-zone danger state
+let dangerFlash = 0;
+let shakeX = 0, shakeY = 0;
+let dangerSfxCooldown = 0;
+
+// ⑦ Touch controls
+let isTouchDevice = false;
+let touchLeft = false, touchRight = false, touchFire = false;
+let touchStartX = 0;
+
+// ══════════════════════════════════════════════════════
+//  INPUT — keyboard
+// ══════════════════════════════════════════════════════
 const keys = {};
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
@@ -226,12 +264,65 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 
 // ══════════════════════════════════════════════════════
+//  ⑦ TOUCH CONTROLS
+// ══════════════════════════════════════════════════════
+function getTouchPos(t) {
+  const rect = C.getBoundingClientRect();
+  return {
+    x: (t.clientX - rect.left) * (W / rect.width),
+    y: (t.clientY - rect.top)  * (H / rect.height),
+  };
+}
+
+C.addEventListener('touchstart', e => {
+  e.preventDefault();
+  isTouchDevice = true;
+  initAudio();
+  for (const t of e.changedTouches) {
+    const { x, y } = getTouchPos(t);
+    touchStartX = x;
+    if (y > H - CS * 3.5) {
+      if      (x < W * 0.33) touchLeft  = true;
+      else if (x > W * 0.67) touchRight = true;
+      else                   touchFire  = true;
+    } else {
+      touchFire = true;
+    }
+  }
+}, { passive: false });
+
+C.addEventListener('touchmove', e => {
+  e.preventDefault();
+  touchLeft = false; touchRight = false;
+  for (const t of e.changedTouches) {
+    const { x, y } = getTouchPos(t);
+    if (y > H - CS * 3.5) {
+      if      (x < W * 0.33) touchLeft  = true;
+      else if (x > W * 0.67) touchRight = true;
+    } else {
+      // Drag to steer in play area
+      const dx = x - touchStartX;
+      if (dx < -8)  touchLeft  = true;
+      if (dx >  8)  touchRight = true;
+    }
+  }
+}, { passive: false });
+
+C.addEventListener('touchend', e => {
+  e.preventDefault();
+  touchLeft = false; touchRight = false; touchFire = false;
+}, { passive: false });
+
+window.addEventListener('touchstart', () => { isTouchDevice = true; }, { once: true, passive: true });
+
+// ══════════════════════════════════════════════════════
 //  START / INIT
 // ══════════════════════════════════════════════════════
 function startGame() {
+  initAudio();
   document.getElementById('overlay').style.display = 'none';
   score = 0; lives = 3; level = 1;
-  activePU = null;
+  activePU = null; dangerFlash = 0;
   initLevel();
   gameRunning = true;
   if (animId) cancelAnimationFrame(animId);
@@ -239,17 +330,14 @@ function startGame() {
 }
 
 function initLevel() {
-  player.x = W / 2;
-  player.y = H - CS * 1.5;
-  bullets  = [];
-  particles = [];
-  powerUps = [];
-  activePU = null;
+  player.x = W / 2; player.y = H - CS * 1.5;
+  bullets = []; particles = []; powerUps = [];
+  activePU = null; dangerFlash = 0; shakeX = 0; shakeY = 0;
 
-  // Bonus life every 3 levels (after level 1)
+  // Bonus life every 3 levels
   if (level > 1 && (level - 1) % 3 === 0) {
     lives = Math.min(lives + 1, 6);
-    spawnParticlesBurst(W/2, H/2, CLR.pink, 40);
+    spawnBurst(W/2, H/2, CLR.pink, 40);
   }
 
   // Bottles
@@ -267,12 +355,11 @@ function initLevel() {
     }
   }
 
-  // Strands — how many at this level?
+  // Strands
   const numStrands = level < 3 ? 1 : level < 5 ? 2 : level < 7 ? 3 : 4;
   strands = [];
-  for (let s = 0; s < numStrands; s++) spawnStrand(s * 2); // stagger start rows
+  for (let s = 0; s < numStrands; s++) spawnStrand(s * 2);
 
-  // Enemies
   spider = null; flea = null; scorpion = null;
   scheduleSpider(); scheduleFlea(); scheduleScorpion();
 }
@@ -280,7 +367,8 @@ function initLevel() {
 function spawnStrand(rowOffset = 0) {
   const segCount = Math.max(8, 14 + level * 2 - strands.length * 4);
   const segs = [];
-  const speed = (0.5 + level * 0.18) * 0.9;
+  // ② Hard speed cap
+  const speed = Math.min((0.5 + level * 0.18) * 0.9, MAX_STRAND_SPEED);
   let dir = 1, col = 0, row = rowOffset;
   for (let i = 0; i < segCount; i++) {
     segs.push({ x: (col+0.5)*CS, y: (row+0.5)*CS, dir, speed });
@@ -307,10 +395,7 @@ function loop() {
   if (levelUpActive) {
     levelUpTimer--;
     drawLevelUpScreen();
-    if (levelUpTimer <= 0) {
-      levelUpActive = false;
-      initLevel();
-    }
+    if (levelUpTimer <= 0) { levelUpActive = false; initLevel(); }
   } else {
     update();
     draw();
@@ -331,34 +416,38 @@ function update() {
   updateScorpion();
   updatePowerUps();
   updateParticles();
+  updateDanger();
   checkCollisions();
   updateHUD();
 
-  // All strands cleared → level up
-  if (strands.every(s => s.length === 0)) {
-    score += 500 * level; // level clear bonus
+  if (strands.length === 0 || strands.every(s => s.length === 0)) {
+    score += 500 * level;
     level++;
+    SFX.levelUp();
     levelUpActive = true;
     levelUpTimer  = LEVELUP_FRAMES;
   }
 }
 
 function updatePlayer() {
-  if (keys['ArrowLeft']  || keys['KeyA']) player.x = Math.max(player.w/2, player.x - player.speed);
-  if (keys['ArrowRight'] || keys['KeyD']) player.x = Math.min(W - player.w/2, player.x + player.speed);
+  const left  = keys['ArrowLeft']  || keys['KeyA'] || touchLeft;
+  const right = keys['ArrowRight'] || keys['KeyD'] || touchRight;
+  if (left)  player.x = Math.max(player.w/2,     player.x - player.speed);
+  if (right) player.x = Math.min(W - player.w/2, player.x + player.speed);
 
   if (player.cooldown > 0) player.cooldown--;
-  const cooldownRate = activePU?.type === 'rapid' ? 6 : 12;
-  if ((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && player.cooldown === 0) {
+  const rate = activePU?.type === 'rapid' ? 6 : 12;
+  if ((keys['Space'] || keys['ArrowUp'] || keys['KeyW'] || touchFire) && player.cooldown === 0) {
     const spd = 10;
     if (activePU?.type === 'wide') {
-      bullets.push({ x: player.x - CS*0.6, y: player.y - player.h/2, speed: spd, angle: -0.15 });
-      bullets.push({ x: player.x,           y: player.y - player.h/2, speed: spd, angle: 0 });
-      bullets.push({ x: player.x + CS*0.6, y: player.y - player.h/2, speed: spd, angle: 0.15 });
+      bullets.push({ x: player.x - CS*.6, y: player.y - player.h/2, speed: spd, angle: -0.15 });
+      bullets.push({ x: player.x,          y: player.y - player.h/2, speed: spd, angle: 0 });
+      bullets.push({ x: player.x + CS*.6, y: player.y - player.h/2, speed: spd, angle:  0.15 });
     } else {
       bullets.push({ x: player.x, y: player.y - player.h/2, speed: spd, angle: 0 });
     }
-    player.cooldown = cooldownRate;
+    player.cooldown = rate;
+    SFX.shoot();
   }
 }
 
@@ -371,6 +460,8 @@ function updateBullets() {
 }
 
 function updateStrands() {
+  let inDanger = false;
+
   for (let si = strands.length - 1; si >= 0; si--) {
     const seg = strands[si];
     if (seg.length === 0) { strands.splice(si, 1); continue; }
@@ -378,11 +469,20 @@ function updateStrands() {
     const lead = seg[0];
     const prev = seg.map(s => ({ x: s.x, y: s.y }));
 
-    lead.x += lead.speed * lead.dir;
-
-    // Bottle collision
+    // ⑤ Poisoned bottle speed boost — strand moves faster near poisoned bottles
+    let speedMult = 1;
     for (const bt of bottles) {
-      if (dist(lead.x, lead.y, bt.x, bt.y) < CS*0.9) {
+      if (bt.poisoned && dist(lead.x, lead.y, bt.x, bt.y) < CS * 2.5) {
+        speedMult = 1.75;
+        break;
+      }
+    }
+
+    lead.x += lead.speed * lead.dir * speedMult;
+
+    // Bottle collision → reverse & drop down
+    for (const bt of bottles) {
+      if (dist(lead.x, lead.y, bt.x, bt.y) < CS * 0.9) {
         lead.dir *= -1;
         lead.y   += CS;
         lead.x   += lead.speed * lead.dir * 2;
@@ -391,15 +491,37 @@ function updateStrands() {
     }
 
     // Wall bounce
-    if (lead.x > W - CS*0.5) { lead.dir = -1; lead.y += CS; lead.x = W - CS*0.5; }
-    else if (lead.x < CS*0.5) { lead.dir = 1; lead.y += CS; lead.x = CS*0.5; }
+    if (lead.x > W - CS*.5) { lead.dir = -1; lead.y += CS; lead.x = W - CS*.5; }
+    else if (lead.x < CS*.5) { lead.dir =  1; lead.y += CS; lead.x = CS*.5; }
 
     // Trail
     for (let i = 1; i < seg.length; i++) {
       seg[i].x = prev[i-1].x;
       seg[i].y = prev[i-1].y;
     }
-    for (const s of seg) s.y = Math.max(CS*0.5, s.y);
+    for (const s of seg) s.y = Math.max(CS*.5, s.y);
+
+    // ③ Danger check — any segment in player zone?
+    if (seg.some(s => s.y > H - CS * 3.5)) inDanger = true;
+  }
+
+  // ③ Ramp danger flash
+  if (inDanger) {
+    dangerFlash = Math.min(dangerFlash + 5, 50);
+    if (dangerSfxCooldown <= 0) { SFX.danger(); dangerSfxCooldown = 40; }
+  } else {
+    dangerFlash = Math.max(dangerFlash - 3, 0);
+  }
+  if (dangerSfxCooldown > 0) dangerSfxCooldown--;
+}
+
+function updateDanger() {
+  // Screen shake proportional to danger
+  if (dangerFlash > 20) {
+    shakeX = (Math.random() - 0.5) * (dangerFlash / 25) * 3;
+    shakeY = (Math.random() - 0.5) * (dangerFlash / 25) * 3;
+  } else {
+    shakeX = 0; shakeY = 0;
   }
 }
 
@@ -426,11 +548,11 @@ function updateFlea() {
   }
   if (!flea) return;
   flea.y += flea.dy; flea.age++;
-  if (flea.age % 14 === 0) {
-    if (!bottles.find(b=>Math.abs(b.x-flea.x)<CS && Math.abs(b.y-flea.y)<CS))
-      bottles.push({ x: flea.x, y: flea.y, hp:1, maxHp:1, poisoned:false });
+  if (flea.age % 14 === 0 && flea.y < H - CS*3) {
+    if (!bottles.find(b => Math.abs(b.x-flea.x)<CS && Math.abs(b.y-flea.y)<CS))
+      bottles.push({ x: flea.x, y: flea.y, hp:1, maxHp:1, poisoned: false });
   }
-  if (flea.y > H+CS) { flea = null; scheduleFlea(); }
+  if (flea.y > H + CS) { flea = null; scheduleFlea(); }
 }
 
 function updateScorpion() {
@@ -445,65 +567,55 @@ function updateScorpion() {
   if (!scorpion) return;
   scorpion.x += scorpion.dx;
   for (const bt of bottles) {
-    if (Math.abs(bt.x-scorpion.x)<CS*0.7 && Math.abs(bt.y-scorpion.y)<CS*0.7) bt.poisoned = true;
+    if (Math.abs(bt.x-scorpion.x)<CS*.7 && Math.abs(bt.y-scorpion.y)<CS*.7) bt.poisoned = true;
   }
   if (scorpion.x < -CS*3 || scorpion.x > W+CS*3) { scorpion = null; scheduleScorpion(); }
 }
 
 function updatePowerUps() {
-  // Float down
   for (const p of powerUps) p.y += 0.8;
-  powerUps = powerUps.filter(p => p.y < H+CS);
+  powerUps = powerUps.filter(p => p.y < H + CS);
 
-  // Player picks up
   for (let i = powerUps.length-1; i >= 0; i--) {
     const p = powerUps[i];
     if (dist(p.x, p.y, player.x, player.y) < CS*1.1) {
       activatePowerUp(p.type);
-      spawnParticlesBurst(p.x, p.y, CLR.gold, 20);
+      spawnBurst(p.x, p.y, CLR.gold, 20);
+      SFX.pickup();
       powerUps.splice(i, 1);
     }
   }
-
-  // Tick active power-up
-  if (activePU) {
-    activePU.timer--;
-    if (activePU.timer <= 0) activePU = null;
-  }
+  if (activePU) { activePU.timer--; if (activePU.timer <= 0) activePU = null; }
 }
 
 function activatePowerUp(type) {
   if (type === 'detangle') {
-    // Clear all un-poisoned bottles
     bottles = bottles.filter(b => b.poisoned);
     score += 50;
-    spawnParticlesBurst(W/2, H/2, CLR.gold, 50);
+    spawnBurst(W/2, H/2, CLR.gold, 50);
   } else {
     activePU = { type, timer: PU_DURATION };
   }
 }
 
 function dropPowerUp(x, y) {
-  if (Math.random() > 0.25) return; // 25% drop chance
-  const type = PU_TYPES[rand(PU_TYPES.length)];
-  powerUps.push({ x, y, type, pulse: 0 });
+  if (Math.random() > 0.25) return;
+  powerUps.push({ x, y, type: PU_TYPES[rand(PU_TYPES.length)], pulse: 0 });
 }
 
 function updateParticles() {
   for (const p of particles) {
-    p.x += p.vx; p.y += p.vy;
-    p.vy += 0.12;
-    p.life--;
+    p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.life--;
     p.alpha = p.life / p.maxLife;
   }
   particles = particles.filter(p => p.life > 0);
 }
 
-function spawnParticlesBurst(x, y, color, count) {
+function spawnBurst(x, y, color, count) {
   for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const spd   = Math.random() * 4 + 1;
-    particles.push({ x, y, vx: Math.cos(angle)*spd, vy: Math.sin(angle)*spd - 2,
+    const a = Math.random() * Math.PI * 2;
+    const s = Math.random() * 4 + 1;
+    particles.push({ x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s - 2,
       color, life: 40 + rand(20), maxLife: 60, alpha: 1, r: 2 + rand(3) });
   }
 }
@@ -516,72 +628,69 @@ function checkCollisions() {
     const b = bullets[bi];
     let hit = false;
 
-    // vs strands
+    // Bullets vs strands
     outer:
     for (let si = 0; si < strands.length; si++) {
       const seg = strands[si];
       for (let idx = seg.length-1; idx >= 0; idx--) {
         const s = seg[idx];
-        if (dist(b.x, b.y, s.x, s.y) < CS*0.7) {
-          spawnParticlesBurst(s.x, s.y, CLR.hot, 8);
-          // Drop a bottle
-          if (!bottles.find(bt=>Math.abs(bt.x-s.x)<CS&&Math.abs(bt.y-s.y)<CS))
+        if (dist(b.x, b.y, s.x, s.y) < CS*.7) {
+          spawnBurst(s.x, s.y, CLR.hot, 8);
+          SFX.hit();
+          if (!bottles.find(bt => Math.abs(bt.x-s.x)<CS && Math.abs(bt.y-s.y)<CS))
             bottles.push({ x:s.x, y:s.y, hp:1, maxHp:1, poisoned:false });
-          // Split
           const tail = seg.splice(idx+1);
           seg.splice(idx, 1);
-          if (tail.length > 0) {
-            tail[0].dir *= -1;
-            strands.push(tail);
-          }
+          if (tail.length > 0) { tail[0].dir *= -1; strands.push(tail); }
           score += 10 * level;
           dropPowerUp(s.x, s.y);
-          hit = true;
-          break outer;
+          hit = true; break outer;
         }
       }
     }
     if (hit) { bullets.splice(bi, 1); continue; }
 
-    // vs bottles
+    // Bullets vs bottles
     for (let bti = bottles.length-1; bti >= 0; bti--) {
       const bt = bottles[bti];
-      if (dist(b.x, b.y, bt.x, bt.y) < CS*0.6) {
+      if (dist(b.x, b.y, bt.x, bt.y) < CS*.6) {
         bt.hp--;
+        SFX.bottle();
         if (bt.hp <= 0) {
-          spawnParticlesBurst(bt.x, bt.y, CLR.gold, 6);
+          spawnBurst(bt.x, bt.y, CLR.gold, 6);
           bottles.splice(bti, 1);
           score += bt.poisoned ? 15 : 5;
         }
-        bullets.splice(bi, 1);
-        hit = true;
-        break;
+        bullets.splice(bi, 1); hit = true; break;
       }
     }
     if (hit) continue;
 
-    // vs spider
-    if (spider && dist(b.x,b.y,spider.x,spider.y)<CS*0.9) {
+    // Bullets vs spider
+    if (spider && dist(b.x, b.y, spider.x, spider.y) < CS*.9) {
       score += 300;
-      spawnParticlesBurst(spider.x, spider.y, CLR.lav, 18);
+      spawnBurst(spider.x, spider.y, CLR.lav, 18);
+      SFX.spider();
       dropPowerUp(spider.x, spider.y);
       spider = null; scheduleSpider();
       bullets.splice(bi, 1); continue;
     }
 
-    // vs flea
-    if (flea && dist(b.x,b.y,flea.x,flea.y)<CS*0.75) {
+    // Bullets vs flea
+    if (flea && dist(b.x, b.y, flea.x, flea.y) < CS*.75) {
       score += 200;
-      spawnParticlesBurst(flea.x, flea.y, CLR.hot, 12);
+      spawnBurst(flea.x, flea.y, CLR.hot, 12);
+      SFX.hit();
       dropPowerUp(flea.x, flea.y);
       flea = null; scheduleFlea();
       bullets.splice(bi, 1); continue;
     }
 
-    // vs scorpion
-    if (scorpion && dist(b.x,b.y,scorpion.x,scorpion.y)<CS*0.9) {
+    // Bullets vs scorpion
+    if (scorpion && dist(b.x, b.y, scorpion.x, scorpion.y) < CS*.9) {
       score += 1000;
-      spawnParticlesBurst(scorpion.x, scorpion.y, CLR.green, 25);
+      spawnBurst(scorpion.x, scorpion.y, CLR.green, 25);
+      SFX.scorpion();
       dropPowerUp(scorpion.x, scorpion.y);
       scorpion = null; scheduleScorpion();
       bullets.splice(bi, 1); continue;
@@ -591,11 +700,9 @@ function checkCollisions() {
   if (invFrames > 0) return;
 
   // Strand vs player
-  for (const seg of strands) {
-    for (const s of seg) {
-      if (dist(s.x, s.y, player.x, player.y) < CS*0.85) { loseLife(); return; }
-    }
-  }
+  for (const seg of strands)
+    for (const s of seg)
+      if (dist(s.x, s.y, player.x, player.y) < CS*.85) { loseLife(); return; }
 
   // Spider vs player
   if (spider && dist(spider.x, spider.y, player.x, player.y) < CS*1.1) { loseLife(); return; }
@@ -603,18 +710,24 @@ function checkCollisions() {
 
 function loseLife() {
   lives--;
-  spawnParticlesBurst(player.x, player.y, CLR.hot, 30);
+  SFX.lifeLost();
+  spawnBurst(player.x, player.y, CLR.hot, 30);
   if (lives <= 0) { gameOver(); return; }
   player.x = W/2;
   bullets = [];
   spider = null; flea = null;
   scheduleSpider(); scheduleFlea();
-  invFrames = 120; // 2 sec invincibility
+  invFrames = 120;
 }
 
 function gameOver() {
   gameRunning = false;
-  if (score > hiScore) hiScore = score;
+  SFX.gameOver();
+  // ④ Persist high score
+  if (score > hiScore) {
+    hiScore = score;
+    localStorage.setItem('hbbu_hi', hiScore);
+  }
   cancelAnimationFrame(animId);
   const ov = document.getElementById('overlay');
   ov.innerHTML = `
@@ -635,21 +748,26 @@ function gameOver() {
 //  DRAW
 // ══════════════════════════════════════════════════════
 function draw() {
-  // BG
-  ctx.fillStyle = CLR.dark;
-  ctx.fillRect(0, 0, W, H);
+  // ③ Screen shake transform
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
 
-  // Grid
-  ctx.strokeStyle = '#F8EEE50A';
-  ctx.lineWidth = 0.5;
-  for (let x = 0; x < W; x += CS) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-  for (let y = 0; y < H; y += CS) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  // ① Blit pre-rendered grid (replaces per-frame grid drawing)
+  ctx.drawImage(gridCanvas, 0, 0);
 
-  // Player zone line
-  ctx.strokeStyle = '#015A4250'; ctx.lineWidth = 1;
-  ctx.setLineDash([4,4]);
-  ctx.beginPath(); ctx.moveTo(0,H-CS*3); ctx.lineTo(W,H-CS*3); ctx.stroke();
-  ctx.setLineDash([]);
+  // ③ Danger overlay — red vignette + border flash
+  if (dangerFlash > 0) {
+    const alpha = dangerFlash / 200;
+    const grad = ctx.createRadialGradient(W/2, H, 20, W/2, H/2, H);
+    grad.addColorStop(0, `rgba(255,13,88,${alpha * 1.4})`);
+    grad.addColorStop(1, 'rgba(255,13,88,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = `rgba(255,13,88,${dangerFlash / 80})`;
+    ctx.lineWidth = 5;
+    ctx.strokeRect(3, 3, W-6, H-6);
+  }
 
   drawParticles();
   drawBottles();
@@ -660,12 +778,26 @@ function draw() {
   if (spider)   drawSpider();
   if (flea)     drawFlea();
   if (scorpion) drawScorpion();
+
+  // ⑦ Touch controls overlay
+  if (isTouchDevice) drawTouchControls();
+
+  ctx.restore();
 }
 
+// ══════════════════════════════════════════════════════
+//  DRAW FUNCTIONS
+// ══════════════════════════════════════════════════════
 function drawBottles() {
   for (const bt of bottles) {
     const { x, y, poisoned, hp, maxHp } = bt;
-    ctx.fillStyle = poisoned ? '#3a8' : CLR.gold;
+    // ⑤ Poisoned bottles pulse to indicate danger
+    if (poisoned) {
+      const pulse = Math.sin(Date.now()/200) * 0.3 + 0.7;
+      ctx.fillStyle = `rgba(51,170,80,${pulse})`;
+    } else {
+      ctx.fillStyle = CLR.gold;
+    }
     ctx.beginPath(); ctx.roundRect(x-CS*.28, y-CS*.42, CS*.56, CS*.84, 4); ctx.fill();
     ctx.fillStyle = poisoned ? '#1c6' : CLR.pink;
     ctx.beginPath(); ctx.roundRect(x-CS*.18, y-CS*.52, CS*.36, CS*.14, 2); ctx.fill();
@@ -675,26 +807,29 @@ function drawBottles() {
       ctx.fillStyle = CLR.hot;
       ctx.fillRect(x-CS*.25, y+CS*.38, CS*.5*(hp/maxHp), CS*.06);
     }
+    // ⑤ Poisoned warning symbol
+    if (poisoned) {
+      ctx.fillStyle = '#ffff00cc';
+      ctx.font = `bold ${CS*.4}px Arial`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('!', x, y - CS*.08);
+    }
   }
 }
 
 function drawStrand(seg) {
   if (seg.length === 0) return;
-  // Connectors first
   ctx.lineCap = 'round';
   for (let i = 0; i < seg.length-1; i++) {
     ctx.strokeStyle = '#FA518570'; ctx.lineWidth = CS*.26;
     ctx.beginPath(); ctx.moveTo(seg[i].x, seg[i].y); ctx.lineTo(seg[i+1].x, seg[i+1].y); ctx.stroke();
   }
-
   for (let i = seg.length-1; i >= 0; i--) {
     const s = seg[i], isHead = (i === 0);
     const t = Date.now()/300 + i*.4;
     const shimmer = Math.sin(t)*.25 + 0.75;
     const r = CS*.44;
-
     ctx.save(); ctx.translate(s.x, s.y);
-
     const grad = ctx.createRadialGradient(0,0,r*.1,0,0,r);
     if (isHead) {
       grad.addColorStop(0, '#FF6BA0'); grad.addColorStop(1, CLR.hot);
@@ -704,12 +839,9 @@ function drawStrand(seg) {
     }
     ctx.fillStyle = grad;
     ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
-
-    // Braid lines
     ctx.strokeStyle = '#FF0D5850'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(0,0,r*.65,.3,Math.PI-.3); ctx.stroke();
     ctx.beginPath(); ctx.arc(0,0,r*.65,Math.PI+.3,-.3); ctx.stroke();
-
     if (isHead) {
       ctx.fillStyle = '#fff';
       ctx.beginPath(); ctx.arc(-r*.3,-r*.2,r*.18,0,Math.PI*2); ctx.fill();
@@ -739,20 +871,16 @@ function drawBullets() {
 }
 
 function drawPowerUps() {
-  const now = Date.now();
   for (const p of powerUps) {
     p.pulse = (p.pulse || 0) + 0.08;
     const sc = 1 + Math.sin(p.pulse) * 0.12;
     ctx.save(); ctx.translate(p.x, p.y); ctx.scale(sc, sc);
-    const colors = { wide:'#C8A96E', rapid:'#FA5185', detangle:'#015A42' };
-    const labels = { wide:'WIDE', rapid:'FAST', detangle:'CLR' };
-    // Glow ring
+    const colors = { wide: CLR.gold, rapid: CLR.pink, detangle: CLR.green };
+    const labels = { wide: 'WIDE', rapid: 'FAST', detangle: 'CLR' };
     ctx.fillStyle = colors[p.type] + '30';
     ctx.beginPath(); ctx.arc(0,0,CS*.6,0,Math.PI*2); ctx.fill();
-    // Star shape
     ctx.fillStyle = colors[p.type];
     drawStar(ctx, 0, 0, 5, CS*.38, CS*.18);
-    // Label
     ctx.fillStyle = '#171411';
     ctx.font = `bold ${CS*.28}px 'Courier New'`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -774,33 +902,22 @@ function drawStar(ctx, cx, cy, pts, r1, r2) {
 
 function drawPlayer() {
   const { x, y, w, h } = player;
-  // Invincibility flash
   if (invFrames > 0 && Math.floor(invFrames/6)%2 === 0) return;
-
   ctx.save(); ctx.translate(x, y);
-
-  // Body
   ctx.fillStyle = CLR.green;
   ctx.beginPath(); ctx.roundRect(-w/2,-h*.3,w,h*.6,6); ctx.fill();
-
-  // Comb teeth
   const teethW = w*.72, toothW = teethW/7 - 2;
   for (let i = 0; i < 7; i++) {
     ctx.fillStyle = i%2===0 ? '#017a5b' : '#013d2d';
     ctx.fillRect(-teethW/2+i*(teethW/7), -h*.56, toothW, h*.28);
   }
-
-  // Nozzle
-  const puColor = activePU ? ({ wide:CLR.gold, rapid:CLR.hot, detangle:'#0a8' }[activePU.type]) : CLR.pink;
+  const puColor = activePU ? ({wide:CLR.gold,rapid:CLR.hot,detangle:'#0a8'}[activePU.type]) : CLR.pink;
   ctx.fillStyle = puColor;
   ctx.beginPath(); ctx.roundRect(-CS*.12,-h*.72,CS*.24,h*.46,4); ctx.fill();
   ctx.fillStyle = activePU ? '#fff' : CLR.hot;
   ctx.beginPath(); ctx.arc(0,-h*.74,CS*.14,0,Math.PI*2); ctx.fill();
-
-  // Shine
   ctx.fillStyle = '#ffffff28';
   ctx.beginPath(); ctx.ellipse(-w*.14,-h*.08,w*.14,h*.09,0,0,Math.PI*2); ctx.fill();
-
   ctx.restore();
 }
 
@@ -875,79 +992,89 @@ function drawParticles() {
   ctx.globalAlpha = 1;
 }
 
+// ⑦ Touch button overlay
+function drawTouchControls() {
+  const btnY = H - CS * 1.1;
+  const btnH = CS * 1.8, btnW = CS * 4.5;
+
+  // Left
+  ctx.fillStyle = touchLeft ? 'rgba(1,90,66,0.75)' : 'rgba(1,90,66,0.35)';
+  ctx.beginPath(); ctx.roundRect(CS*.5, btnY - btnH/2, btnW, btnH, 10); ctx.fill();
+  ctx.fillStyle = '#F8EEE5cc';
+  ctx.font = `bold ${CS*.9}px Arial`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('◀', CS*.5 + btnW/2, btnY);
+
+  // Right
+  ctx.fillStyle = touchRight ? 'rgba(1,90,66,0.75)' : 'rgba(1,90,66,0.35)';
+  ctx.beginPath(); ctx.roundRect(W - CS*.5 - btnW, btnY - btnH/2, btnW, btnH, 10); ctx.fill();
+  ctx.fillStyle = '#F8EEE5cc';
+  ctx.fillText('▶', W - CS*.5 - btnW/2, btnY);
+
+  // Fire
+  ctx.fillStyle = touchFire ? 'rgba(250,81,133,0.85)' : 'rgba(250,81,133,0.4)';
+  ctx.beginPath(); ctx.arc(W/2, btnY, CS*1.3, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#F8EEE5';
+  ctx.font = `bold ${CS*.5}px 'Courier New'`;
+  ctx.fillText('FIRE', W/2, btnY);
+}
+
 // ══════════════════════════════════════════════════════
 //  LEVEL-UP SCREEN
 // ══════════════════════════════════════════════════════
 function drawLevelUpScreen() {
-  // Dim background
   ctx.fillStyle = '#171411CC';
   ctx.fillRect(0,0,W,H);
 
   const th = theme(level);
   const progress = 1 - (levelUpTimer / LEVELUP_FRAMES);
-  const fadeIn    = Math.min(progress * 5, 1);
-  const pulse     = Math.sin(Date.now()/120) * 6;
+  const fadeIn   = Math.min(progress * 5, 1);
+  const pulse    = Math.sin(Date.now()/120) * 6;
 
   ctx.globalAlpha = fadeIn;
 
-  // Glow aura
   const aura = ctx.createRadialGradient(W/2,H/2,40,W/2,H/2,220);
   aura.addColorStop(0, th.glow + '40');
   aura.addColorStop(1, 'transparent');
   ctx.fillStyle = aura;
   ctx.fillRect(0,0,W,H);
 
-  // "LEVEL UP!" banner
-  ctx.shadowColor = th.glow;
-  ctx.shadowBlur  = 30 + pulse;
+  ctx.shadowColor = th.glow; ctx.shadowBlur = 30 + pulse;
   ctx.fillStyle   = '#F8EEE5';
-  ctx.font        = `900 ${54 + pulse*0.5}px 'Courier New'`;
-  ctx.textAlign   = 'center';
-  ctx.textBaseline= 'middle';
+  ctx.font        = `900 ${54+pulse*.5}px 'Courier New'`;
+  ctx.textAlign   = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText('LEVEL UP!', W/2, H/2 - 80);
 
-  // Level number badge
-  ctx.fillStyle = th.glow;
-  ctx.shadowBlur = 20;
+  ctx.fillStyle = th.glow; ctx.shadowBlur = 20;
   ctx.font = `bold 28px 'Courier New'`;
   ctx.fillText(`LEVEL  ${level}`, W/2, H/2 - 20);
 
-  // Theme name
-  ctx.fillStyle   = '#F8EEE5';
-  ctx.shadowBlur  = 10;
-  ctx.font        = `900 32px 'Courier New'`;
+  ctx.fillStyle = '#F8EEE5'; ctx.shadowBlur = 10;
+  ctx.font = `900 32px 'Courier New'`;
   ctx.fillText(th.name.toUpperCase(), W/2, H/2 + 30);
 
-  // Sub-text
-  ctx.fillStyle   = '#F8EEE5BB';
-  ctx.shadowBlur  = 0;
-  ctx.font        = `14px 'Courier New'`;
+  ctx.fillStyle = '#F8EEE5BB'; ctx.shadowBlur = 0;
+  ctx.font = `14px 'Courier New'`;
   ctx.fillText(th.sub, W/2, H/2 + 70);
 
-  // Bonus life notice
-  if ((level - 1) % 3 === 0 && level > 1) {
-    ctx.fillStyle = CLR.pink;
-    ctx.shadowColor = CLR.pink; ctx.shadowBlur = 15;
+  if ((level-1) % 3 === 0 && level > 1) {
+    ctx.fillStyle = CLR.pink; ctx.shadowColor = CLR.pink; ctx.shadowBlur = 15;
     ctx.font = `bold 16px 'Courier New'`;
     ctx.fillText('✦  BONUS LIFE AWARDED  ✦', W/2, H/2 + 110);
   }
 
-  // Progress bar
-  const barW = 280, barH = 6;
+  const barW = 280;
   ctx.shadowBlur = 0;
   ctx.fillStyle  = '#F8EEE520';
-  ctx.fillRect(W/2-barW/2, H/2+138, barW, barH);
+  ctx.fillRect(W/2-barW/2, H/2+138, barW, 6);
   ctx.fillStyle  = th.glow;
-  ctx.fillRect(W/2-barW/2, H/2+138, barW*progress, barH);
+  ctx.fillRect(W/2-barW/2, H/2+138, barW*progress, 6);
 
-  // Strand count hint
-  const nextStrands = level+1 < 3 ? 1 : level+1 < 5 ? 2 : level+1 < 7 ? 3 : 4;
-  ctx.fillStyle   = '#F8EEE570';
-  ctx.font        = `11px 'Courier New'`;
-  ctx.fillText(`Next: ${nextStrands} strand${nextStrands>1?'s':''} · ${20+level*2} bottles · Speed +${Math.round(level*0.18*10)/10}`, W/2, H/2+160);
+  const ns = level+1 < 3 ? 1 : level+1 < 5 ? 2 : level+1 < 7 ? 3 : 4;
+  ctx.fillStyle = '#F8EEE570'; ctx.font = `11px 'Courier New'`;
+  ctx.fillText(`Next: ${ns} strand${ns>1?'s':''} · ${20+level*2} bottles · Speed capped at ${MAX_STRAND_SPEED}`, W/2, H/2+160);
 
-  ctx.globalAlpha = 1;
-  ctx.shadowBlur  = 0;
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
 }
 
 // ══════════════════════════════════════════════════════
@@ -957,18 +1084,17 @@ function updateHUD() {
   document.getElementById('score-disp').textContent = score.toLocaleString();
   document.getElementById('level-disp').textContent = level;
   document.getElementById('hi-disp').textContent    = hiScore.toLocaleString();
-  const hearts = Array.from({length:6},(_,i)=>
+  const hearts = Array.from({length:6}, (_,i) =>
     i < lives ? `<span style="color:#FA5185">♥</span>`
               : `<span style="color:#2a2a2a">♥</span>`
   ).join(' ');
   document.getElementById('lives-disp').innerHTML = hearts;
 
-  // Power-up bar
   const puBar = document.getElementById('powerup-bar');
   if (activePU) {
     const pct = Math.round((activePU.timer / PU_DURATION) * 100);
     const labels = { wide:'WIDE SHOT', rapid:'RAPID FIRE', detangle:'DETANGLER' };
-    const colors  = { wide:'#C8A96E', rapid:'#FA5185',    detangle:'#015A42' };
+    const colors  = { wide: CLR.gold,  rapid: CLR.pink,   detangle: CLR.green };
     puBar.innerHTML = `<span style="color:${colors[activePU.type]}">✦ ${labels[activePU.type]} ACTIVE ✦</span>
       <span style="color:#F8EEE560;font-size:10px"> [${pct}%]</span>`;
   } else {
@@ -981,7 +1107,7 @@ function updateHUD() {
 // ══════════════════════════════════════════════════════
 function dist(ax,ay,bx,by) { return Math.sqrt((ax-bx)**2+(ay-by)**2); }
 
-// Draw title screen
+// Initial blank frame
 ctx.fillStyle = CLR.dark; ctx.fillRect(0,0,W,H);
 </script>
 </body>
