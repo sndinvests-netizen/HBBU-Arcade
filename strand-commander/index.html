@@ -13,36 +13,40 @@
   html, body {
     background: #171411;
     font-family: 'Courier New', monospace;
-    overflow-x: hidden;
-    /* touch-action ONLY on the canvas — not body, so WP page can still scroll */
+    /* overflow:hidden clips anything outside the game — no scroll inside iframe */
+    overflow: hidden;
     width: 100%;
+    height: 100%;
   }
   #canvas-wrap, canvas {
     touch-action: none;
   }
 
-  /* ── Outer centering shell ───────────────────────── */
+  /* ── Shell: transparent, no padding, tight fit ───── */
   #game-shell {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     width: 100%;
-    background: #171411;
-    padding: 8px 0 16px;
+    /* No background here — only #game-root/canvas have the dark bg */
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
   }
 
   /* ── Root container — scaled by JS ──────────────────
-     Natural game width = 564px (560 canvas + 2px border each side).
-     JS sets transform:scale() so everything shrinks together
-     on narrow screens without breaking coordinates.   */
+     Natural width = 564px. JS applies transform:scale()
+     based on available iframe/column width.            */
   #game-root {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 564px;
-    transform-origin: top center;
-    /* transition keeps resize smooth */
-    transition: transform 0.15s ease;
+    background: #171411;
+    transform-origin: top left;   /* left-anchored = no centering math needed */
+    transition: transform 0.1s ease;
+    flex-shrink: 0;
   }
 
   #hbbu-logo-wrap {
@@ -1149,39 +1153,38 @@ ctx.fillStyle = CLR.dark; ctx.fillRect(0,0,W,H);
 // ══════════════════════════════════════════════════════
 //  RESPONSIVE SCALING — works standalone + in WP iframe
 // ══════════════════════════════════════════════════════
-const GAME_NATURAL_W = 564; // 560px canvas + 2px border × 2
+const GAME_NATURAL_W = 564;
+const GAME_NATURAL_H = 848; // logo+title+hud+bar+canvas total
 
 function scaleGame() {
   const root  = document.getElementById('game-root');
   const shell = document.getElementById('game-shell');
 
-  // In an iframe, document.documentElement.clientWidth is the most reliable
-  // source — window.innerWidth can return the parent frame's width in some browsers
-  const avail = Math.max(
-    100,
-    document.documentElement.clientWidth ||
-    shell.clientWidth ||
-    window.innerWidth
-  );
+  // clientWidth is the reliable iframe-interior width
+  const avail = document.documentElement.clientWidth || window.innerWidth || GAME_NATURAL_W;
   const scale = Math.min(1, avail / GAME_NATURAL_W);
 
+  // Anchor to top-left, shift root to center it manually
+  const offset = Math.max(0, (avail - GAME_NATURAL_W * scale) / 2);
   root.style.transform       = `scale(${scale})`;
-  root.style.transformOrigin = 'top center';
+  root.style.transformOrigin = 'top left';
+  root.style.marginLeft      = offset + 'px';
 
-  // Collapse shell height to scaled content so WP page has no dead gap below
-  const naturalH = root.scrollHeight;
-  const scaledH  = Math.ceil(naturalH * scale);
-  shell.style.height        = scaledH + 'px';
+  // Shell height = exact scaled game height — no dead space
+  const scaledH = Math.ceil(GAME_NATURAL_H * scale);
+  shell.style.height         = scaledH + 'px';
   document.body.style.height = scaledH + 'px';
+  document.documentElement.style.height = scaledH + 'px';
 
-  // Post height to WordPress so iframe auto-resizes (if using iframe-resizer plugin)
+  // Tell parent WP iframe to resize (works with iframe-resizer plugin)
   try { window.parent.postMessage({ type: 'hbbu-resize', height: scaledH }, '*'); } catch(e) {}
 }
 
 window.addEventListener('resize', scaleGame);
-// Run after fonts/images settle
-window.addEventListener('load', scaleGame);
+window.addEventListener('load',   scaleGame);
+// Run immediately AND after images load (logo affects height)
 scaleGame();
+document.querySelector('#hbbu-logo-wrap img').addEventListener('load', scaleGame);
 </script>
 </body>
 </html>
