@@ -16,11 +16,9 @@
     font-family: 'Courier New', monospace;
     overflow: hidden;
   }
-  #header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
+  #hbbu-logo-wrap {
     margin-bottom: 10px;
+    text-align: center;
   }
   #logo-text {
     font-size: 13px;
@@ -28,6 +26,8 @@
     color: #FA5185;
     text-transform: uppercase;
     font-weight: bold;
+    margin-bottom: 4px;
+    text-align: center;
   }
   #game-title {
     font-size: 28px;
@@ -36,17 +36,30 @@
     color: #F8EEE5;
     text-transform: uppercase;
     text-shadow: 0 0 20px #FA5185, 0 0 40px #FA5185;
+    margin-bottom: 8px;
+    text-align: center;
   }
   #hud {
     display: flex;
-    gap: 40px;
+    gap: 32px;
     margin-bottom: 8px;
     font-size: 14px;
     letter-spacing: 2px;
     color: #F8EEE5;
+    align-items: flex-end;
   }
-  .hud-label { color: #FA5185; font-size: 11px; display: block; }
-  .hud-val { font-size: 20px; font-weight: bold; color: #F8EEE5; }
+  .hud-item { text-align: center; }
+  .hud-label { color: #FA5185; font-size: 10px; display: block; letter-spacing: 2px; }
+  .hud-val   { font-size: 20px; font-weight: bold; color: #F8EEE5; }
+  #powerup-bar {
+    height: 22px;
+    margin-bottom: 4px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #F8EEE5aa;
+    text-align: center;
+    min-width: 560px;
+  }
   #canvas-wrap {
     position: relative;
     border: 2px solid #FA5185;
@@ -63,7 +76,7 @@
     background: #171411ee;
     color: #F8EEE5;
     text-align: center;
-    gap: 16px;
+    gap: 14px;
   }
   #overlay h2 {
     font-size: 36px;
@@ -72,10 +85,10 @@
     text-shadow: 0 0 20px #FA5185;
     text-transform: uppercase;
   }
-  #overlay p { font-size: 14px; color: #F8EEE5bb; line-height: 1.8; letter-spacing: 1px; }
-  #overlay .tagline { color: #015A42; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; }
+  #overlay p { font-size: 13px; color: #F8EEE5bb; line-height: 1.9; letter-spacing: 1px; }
+  #overlay .tagline { color: #015A42; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; }
   #start-btn {
-    margin-top: 8px;
+    margin-top: 6px;
     padding: 14px 40px;
     background: #FA5185;
     color: #F8EEE5;
@@ -90,28 +103,58 @@
     box-shadow: 0 0 20px #FA518580;
   }
   #start-btn:hover { background: #FF0D58; box-shadow: 0 0 30px #FF0D58; transform: scale(1.05); }
-  #controls-hint {
-    margin-top: 6px;
-    font-size: 11px;
-    color: #F8EEE5aa;
-    letter-spacing: 1px;
-  }
-  .lives-row { display: flex; gap: 8px; align-items: center; }
+  #controls-hint { font-size: 11px; color: #F8EEE5aa; letter-spacing: 1px; }
 </style>
 </head>
 <body>
 
-<div id="header">
-  <div id="logo-text">✦ HBBU Arcade ✦</div>
+<!-- Hair B&B Logo -->
+<div id="hbbu-logo-wrap">
+  <svg width="340" height="72" viewBox="0 0 340 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Hair B&B Logo">
+    <!-- Pink accent bar top -->
+    <rect x="20" y="6" width="300" height="3" rx="1.5" fill="#FFB6BA"/>
+
+    <!-- "Hair" text -->
+    <text x="22" y="40" font-family="Georgia, serif" font-style="italic" font-size="28" font-weight="700" fill="#F8EEE5" letter-spacing="1">Hair</text>
+
+    <!-- "B" first — large, bold, hot pink -->
+    <text x="86" y="42" font-family="Arial Black, Arial, sans-serif" font-size="34" font-weight="900" fill="#FA5185">B</text>
+
+    <!-- ampersand -->
+    <text x="112" y="40" font-family="Georgia, serif" font-size="20" font-weight="400" fill="#FFB6BA">&amp;</text>
+
+    <!-- "B" second — large, bold, deep green -->
+    <text x="128" y="42" font-family="Arial Black, Arial, sans-serif" font-size="34" font-weight="900" fill="#015A42">B</text>
+
+    <!-- Dot separator -->
+    <circle cx="164" cy="28" r="3" fill="#FA5185"/>
+
+    <!-- "UNIVERSE" subtext -->
+    <text x="174" y="28" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#FFB6BA" letter-spacing="3" text-anchor="start">UNIVERSITY</text>
+
+    <!-- "ARCADE" subtext below -->
+    <text x="174" y="43" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#015A42" letter-spacing="3.5" text-anchor="start">ARCADE</text>
+
+    <!-- Vertical divider -->
+    <line x1="168" y1="16" x2="168" y2="50" stroke="#F8EEE520" stroke-width="1"/>
+
+    <!-- Pink accent bar bottom -->
+    <rect x="20" y="56" width="300" height="2" rx="1" fill="#015A4260"/>
+
+    <!-- Tagline -->
+    <text x="170" y="68" font-family="Arial, sans-serif" font-size="8" fill="#F8EEE550" letter-spacing="2.5" text-anchor="middle">HAIR · BEAUTY · BUSINESS</text>
+  </svg>
 </div>
+
 <div id="game-title">Strand Commander</div>
 
 <div id="hud">
-  <div><span class="hud-label">SCORE</span><span class="hud-val" id="score-disp">0</span></div>
-  <div><span class="hud-label">LEVEL</span><span class="hud-val" id="level-disp">1</span></div>
-  <div><span class="hud-label">HIGH SCORE</span><span class="hud-val" id="hi-disp">0</span></div>
-  <div><span class="hud-label">LIVES</span><span class="hud-val" id="lives-disp">♥ ♥ ♥</span></div>
+  <div class="hud-item"><span class="hud-label">SCORE</span><span class="hud-val" id="score-disp">0</span></div>
+  <div class="hud-item"><span class="hud-label">LEVEL</span><span class="hud-val" id="level-disp">1</span></div>
+  <div class="hud-item"><span class="hud-label">HIGH SCORE</span><span class="hud-val" id="hi-disp">0</span></div>
+  <div class="hud-item"><span class="hud-label">LIVES</span><span class="hud-val" id="lives-disp">♥ ♥ ♥</span></div>
 </div>
+<div id="powerup-bar">&nbsp;</div>
 
 <div id="canvas-wrap">
   <canvas id="c" width="560" height="620"></canvas>
@@ -121,65 +164,106 @@
     <p>
       Shoot toner blasts to destroy the<br>
       <strong style="color:#FA5185">Bad Hair Strand</strong> before it reaches you!<br><br>
-      Watch out for <strong style="color:#FF0D58">Tangle Spiders</strong> &amp;<br>
-      <strong style="color:#015A42">Bleach Scorpions</strong> poisoning your products!
+      Grab <strong style="color:#C8A96E">power-ups</strong> for wide shots &amp; rapid fire.<br>
+      Watch out for <strong style="color:#C97DC8">Tangle Spiders</strong> &amp;<br>
+      <strong style="color:#015A42">Bleach Scorpions</strong> poisoning your products!<br><br>
+      <span style="color:#F8EEE580; font-size:11px;">Bonus life every 3 levels · Multiple strands at level 3+</span>
     </p>
     <button id="start-btn" onclick="startGame()">Start Styling</button>
-    <div id="controls-hint">← → MOVE &nbsp;|&nbsp; SPACE SHOOT &nbsp;|&nbsp; A/D also work</div>
+    <div id="controls-hint">← → MOVE &nbsp;|&nbsp; SPACE SHOOT &nbsp;|&nbsp; A / D also work</div>
   </div>
 </div>
 
 <script>
-// ─── Constants ────────────────────────────────────────────────
-const C = document.getElementById('c');
+// ══════════════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════════════
+const C   = document.getElementById('c');
 const ctx = C.getContext('2d');
 const W = C.width, H = C.height;
-
 const COLS = 28, ROWS = 31;
-const CS = W / COLS; // cell size = 20
+const CS = W / COLS; // 20px
 
-const COLORS = {
-  bg:      '#F8EEE5',
+const CLR = {
   pink:    '#FA5185',
-  hotpink: '#FF0D58',
+  hot:     '#FF0D58',
   green:   '#015A42',
   dark:    '#171411',
   cream:   '#F8EEE5',
   gold:    '#C8A96E',
-  lavender:'#C97DC8',
+  lav:     '#C97DC8',
 };
 
-// ─── Game State ───────────────────────────────────────────────
+// ── Level Themes ──────────────────────────────────────
+const THEMES = [
+  { name: 'Babylights',      sub: 'Fine sections — keep it subtle, babe.',       glow: '#FA5185' },
+  { name: 'Balayage',        sub: 'Sun-kissed color, hand-painted to perfection.',glow: '#C8A96E' },
+  { name: 'Color Correction',sub: 'Fix the damage. Own the transformation.',      glow: '#C97DC8' },
+  { name: 'Foilayage',       sub: 'Foils meet balayage — best of both worlds.',   glow: '#015A42' },
+  { name: 'Extensions',      sub: 'Length & volume unlocked. You earned it.',     glow: '#FA5185' },
+  { name: 'Bleach & Tone',   sub: 'Lift it. Tone it. Slay it.',                  glow: '#FF0D58' },
+  { name: 'Root Smudge',     sub: 'Seamless root to tip. Chef's kiss.',           glow: '#C8A96E' },
+  { name: 'Gloss & Glaze',   sub: 'Shine, babe. Make them turn heads.',           glow: '#C97DC8' },
+  { name: 'Master Stylist',  sub: 'Behind the chair. No one can stop you.',       glow: '#FF0D58' },
+];
+function theme(lvl) { return THEMES[Math.min(lvl - 1, THEMES.length - 1)]; }
+
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
 let score = 0, hiScore = 0, lives = 3, level = 1;
-let gameRunning = false, gamePaused = false;
+let gameRunning = false;
 let animId;
 
-// Player
-let player = { x: W/2, y: H - CS*1.5, w: CS*1.8, h: CS*1.2, speed: 5, shootCooldown: 0 };
+// Level-up screen
+let levelUpActive = false;
+let levelUpTimer  = 0;
+const LEVELUP_FRAMES = 160;
 
-// Bullets (toner shots)
+// Particles
+let particles = [];
+
+// Player
+let player = { x: W/2, y: H - CS*1.5, w: CS*1.8, h: CS*1.2, speed: 5, cooldown: 0 };
+
+// Bullets
 let bullets = [];
 
-// Bottles (product obstacles – like mushrooms)
+// Bottles
 let bottles = [];
 
-// Strand segments
-let strand = [];
+// Strands — array of segment arrays (multi-strand support)
+let strands = [];
 
-// Enemies
-let spider = null;
-let flea   = null;
-let scorpion = null;
+// Special enemies
+let spider = null, flea = null, scorpion = null;
+let spiderTimer = 0, fleaTimer = 0, scorpionTimer = 0;
+
+// Power-ups on field
+let powerUps = [];
+// Active power-up
+let activePU   = null; // { type, timer }
+const PU_TYPES = ['wide', 'rapid', 'detangle'];
+const PU_DURATION = 420; // 7 seconds
+
+// Invincibility flash after losing life
+let invFrames = 0;
 
 // Input
 const keys = {};
-window.addEventListener('keydown', e => { keys[e.code] = true; e.preventDefault && (e.code === 'Space') && e.preventDefault(); });
-window.addEventListener('keyup',   e => { keys[e.code] = false; });
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Space') e.preventDefault();
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
 
-// ─── Init ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+//  START / INIT
+// ══════════════════════════════════════════════════════
 function startGame() {
   document.getElementById('overlay').style.display = 'none';
   score = 0; lives = 3; level = 1;
+  activePU = null;
   initLevel();
   gameRunning = true;
   if (animId) cancelAnimationFrame(animId);
@@ -187,257 +271,320 @@ function startGame() {
 }
 
 function initLevel() {
-  // Reset player
-  player.x = W/2;
-  player.y = H - CS*1.5;
-  bullets = [];
+  player.x = W / 2;
+  player.y = H - CS * 1.5;
+  bullets  = [];
+  particles = [];
+  powerUps = [];
+  activePU = null;
 
-  // Spawn product bottles randomly (avoid bottom player zone)
+  // Bonus life every 3 levels (after level 1)
+  if (level > 1 && (level - 1) % 3 === 0) {
+    lives = Math.min(lives + 1, 6);
+    spawnParticlesBurst(W/2, H/2, CLR.pink, 40);
+  }
+
+  // Bottles
   bottles = [];
-  const bottleCount = 20 + level * 3;
-  for (let i = 0; i < bottleCount; i++) {
-    let placed = false, attempts = 0;
-    while (!placed && attempts < 50) {
-      attempts++;
+  const bCount = 18 + level * 2;
+  for (let i = 0; i < bCount; i++) {
+    let placed = false, tries = 0;
+    while (!placed && tries++ < 60) {
       const bx = (Math.floor(Math.random() * COLS) + 0.5) * CS;
-      const by = (Math.floor(Math.random() * (ROWS - 8)) + 2) * CS;
-      if (!bottles.find(b => Math.abs(b.x - bx) < CS && Math.abs(b.y - by) < CS)) {
+      const by = (Math.floor(Math.random() * (ROWS - 9)) + 2) * CS;
+      if (!bottles.find(b => Math.abs(b.x-bx)<CS && Math.abs(b.y-by)<CS)) {
         bottles.push({ x: bx, y: by, hp: 2, maxHp: 2, poisoned: false });
         placed = true;
       }
     }
   }
 
-  // Spawn strand (hair braid centipede)
-  spawnStrand();
+  // Strands — how many at this level?
+  const numStrands = level < 3 ? 1 : level < 5 ? 2 : level < 7 ? 3 : 4;
+  strands = [];
+  for (let s = 0; s < numStrands; s++) spawnStrand(s * 2); // stagger start rows
 
-  // Spider & flea
-  spider = null;
-  flea = null;
-  scorpion = null;
-  scheduleSpider();
-  scheduleFlea();
-  scheduleScorpion();
+  // Enemies
+  spider = null; flea = null; scorpion = null;
+  scheduleSpider(); scheduleFlea(); scheduleScorpion();
 }
 
-function spawnStrand() {
-  const segCount = 12 + level * 2;
-  strand = [];
-  let dir = 1; // 1=right, -1=left
-  let col = 0, row = 0;
-
+function spawnStrand(rowOffset = 0) {
+  const segCount = Math.max(8, 14 + level * 2 - strands.length * 4);
+  const segs = [];
+  const speed = (0.5 + level * 0.18) * 0.9;
+  let dir = 1, col = 0, row = rowOffset;
   for (let i = 0; i < segCount; i++) {
-    strand.push({
-      x: (col + 0.5) * CS,
-      y: (row + 0.5) * CS,
-      dir: dir,
-      head: i === 0,
-      hp: 1,
-      speed: (1 + level * 0.3) * 0.6,
-    });
+    segs.push({ x: (col+0.5)*CS, y: (row+0.5)*CS, dir, speed });
     col++;
-    if (col >= COLS) { col = COLS - 1; row++; dir = -1; }
+    if (col >= COLS) { col = COLS-1; row++; dir = -1; }
     else if (col < 0) { col = 0; row++; dir = 1; }
   }
+  strands.push(segs);
 }
 
-// ─── Timers for special enemies ───────────────────────────────
-let spiderTimer = 0, fleaTimer = 0, scorpionTimer = 0;
-function scheduleSpider()   { spiderTimer   = 300 + Math.random() * 400; }
-function scheduleFlea()     { fleaTimer     = 200 + Math.random() * 300; }
-function scheduleScorpion() { scorpionTimer = 600 + Math.random() * 600; }
+// ══════════════════════════════════════════════════════
+//  SCHEDULING
+// ══════════════════════════════════════════════════════
+function scheduleSpider()   { spiderTimer   = Math.max(60,  280 - level*15) + rand(200); }
+function scheduleFlea()     { fleaTimer     = Math.max(60,  200 - level*10) + rand(200); }
+function scheduleScorpion() { scorpionTimer = Math.max(120, 550 - level*20) + rand(300); }
+function rand(n) { return Math.floor(Math.random() * n); }
 
-// ─── Game Loop ────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+//  LOOP
+// ══════════════════════════════════════════════════════
 function loop() {
   if (!gameRunning) return;
-  update();
-  draw();
+  if (levelUpActive) {
+    levelUpTimer--;
+    drawLevelUpScreen();
+    if (levelUpTimer <= 0) {
+      levelUpActive = false;
+      initLevel();
+    }
+  } else {
+    update();
+    draw();
+  }
   animId = requestAnimationFrame(loop);
 }
 
-// ─── Update ───────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+//  UPDATE
+// ══════════════════════════════════════════════════════
 function update() {
+  if (invFrames > 0) invFrames--;
   updatePlayer();
   updateBullets();
-  updateStrand();
+  updateStrands();
   updateSpider();
   updateFlea();
   updateScorpion();
+  updatePowerUps();
+  updateParticles();
   checkCollisions();
   updateHUD();
 
-  // Check win: strand cleared
-  if (strand.length === 0) {
+  // All strands cleared → level up
+  if (strands.every(s => s.length === 0)) {
+    score += 500 * level; // level clear bonus
     level++;
-    initLevel();
+    levelUpActive = true;
+    levelUpTimer  = LEVELUP_FRAMES;
   }
 }
 
 function updatePlayer() {
-  const left  = keys['ArrowLeft']  || keys['KeyA'];
-  const right = keys['ArrowRight'] || keys['KeyD'];
-  if (left)  player.x = Math.max(player.w/2,   player.x - player.speed);
-  if (right) player.x = Math.min(W - player.w/2, player.x + player.speed);
+  if (keys['ArrowLeft']  || keys['KeyA']) player.x = Math.max(player.w/2, player.x - player.speed);
+  if (keys['ArrowRight'] || keys['KeyD']) player.x = Math.min(W - player.w/2, player.x + player.speed);
 
-  // Shoot
-  if (player.shootCooldown > 0) player.shootCooldown--;
-  if ((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && player.shootCooldown === 0) {
-    bullets.push({ x: player.x, y: player.y - player.h/2, speed: 10 });
-    player.shootCooldown = 12;
+  if (player.cooldown > 0) player.cooldown--;
+  const cooldownRate = activePU?.type === 'rapid' ? 6 : 12;
+  if ((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && player.cooldown === 0) {
+    const spd = 10;
+    if (activePU?.type === 'wide') {
+      bullets.push({ x: player.x - CS*0.6, y: player.y - player.h/2, speed: spd, angle: -0.15 });
+      bullets.push({ x: player.x,           y: player.y - player.h/2, speed: spd, angle: 0 });
+      bullets.push({ x: player.x + CS*0.6, y: player.y - player.h/2, speed: spd, angle: 0.15 });
+    } else {
+      bullets.push({ x: player.x, y: player.y - player.h/2, speed: spd, angle: 0 });
+    }
+    player.cooldown = cooldownRate;
   }
 }
 
 function updateBullets() {
-  for (let b of bullets) b.y -= b.speed;
-  bullets = bullets.filter(b => b.y > -10);
+  for (const b of bullets) {
+    b.y -= b.speed * Math.cos(b.angle || 0);
+    b.x += b.speed * Math.sin(b.angle || 0);
+  }
+  bullets = bullets.filter(b => b.y > -10 && b.x > -10 && b.x < W+10);
 }
 
-function updateStrand() {
-  if (strand.length === 0) return;
+function updateStrands() {
+  for (let si = strands.length - 1; si >= 0; si--) {
+    const seg = strands[si];
+    if (seg.length === 0) { strands.splice(si, 1); continue; }
 
-  // Move lead segment, rest follow
-  const lead = strand[0];
-  const prevPositions = strand.map(s => ({ x: s.x, y: s.y }));
+    const lead = seg[0];
+    const prev = seg.map(s => ({ x: s.x, y: s.y }));
 
-  lead.x += lead.speed * lead.dir;
+    lead.x += lead.speed * lead.dir;
 
-  // Check bottle collisions for lead
-  for (let bt of bottles) {
-    if (dist(lead.x, lead.y, bt.x, bt.y) < CS * 0.9) {
-      lead.dir *= -1;
-      lead.y += CS;
-      lead.x += lead.speed * lead.dir;
-      break;
+    // Bottle collision
+    for (const bt of bottles) {
+      if (dist(lead.x, lead.y, bt.x, bt.y) < CS*0.9) {
+        lead.dir *= -1;
+        lead.y   += CS;
+        lead.x   += lead.speed * lead.dir * 2;
+        break;
+      }
     }
-  }
 
-  // Wall bounce
-  if (lead.x > W - CS * 0.5) {
-    lead.dir = -1;
-    lead.y += CS;
-    lead.x = W - CS * 0.5;
-  } else if (lead.x < CS * 0.5) {
-    lead.dir = 1;
-    lead.y += CS;
-    lead.x = CS * 0.5;
-  }
+    // Wall bounce
+    if (lead.x > W - CS*0.5) { lead.dir = -1; lead.y += CS; lead.x = W - CS*0.5; }
+    else if (lead.x < CS*0.5) { lead.dir = 1; lead.y += CS; lead.x = CS*0.5; }
 
-  // Following segments trail leader with 1-seg delay
-  for (let i = 1; i < strand.length; i++) {
-    strand[i].x = prevPositions[i-1].x;
-    strand[i].y = prevPositions[i-1].y;
-    strand[i].dir = prevPositions[i-1].x > (i > 1 ? prevPositions[i-2].x : strand[i].x) ? 1 : -1;
+    // Trail
+    for (let i = 1; i < seg.length; i++) {
+      seg[i].x = prev[i-1].x;
+      seg[i].y = prev[i-1].y;
+    }
+    for (const s of seg) s.y = Math.max(CS*0.5, s.y);
   }
-
-  // Clamp Y so strand doesn't go above top
-  for (let s of strand) s.y = Math.max(CS * 0.5, s.y);
 }
 
 function updateSpider() {
-  spiderTimer--;
-  if (spiderTimer <= 0 && !spider) {
+  if (--spiderTimer <= 0 && !spider) {
     spider = {
-      x: Math.random() < 0.5 ? 0 : W,
-      y: H - CS * 4 - Math.random() * CS * 6,
-      dx: (Math.random() * 2 + 1) * (Math.random() < 0.5 ? 1 : -1),
-      dy: (Math.random() * 1.5 - 0.75),
-      timer: 0,
+      x: Math.random() < 0.5 ? -CS : W+CS,
+      y: H - CS*4 - rand(CS*6),
+      dx: (1.5 + level*0.2) * (Math.random()<0.5?1:-1),
+      dy: Math.random()*1.5 - 0.75,
+      age: 0,
     };
   }
   if (!spider) return;
-  spider.x += spider.dx;
-  spider.y += spider.dy;
-  spider.timer++;
-  // Bounce vertically in play zone
-  if (spider.y < H - CS * 12) spider.dy = Math.abs(spider.dy);
-  if (spider.y > H - CS * 2)  spider.dy = -Math.abs(spider.dy);
-  // Remove if off screen
-  if (spider.x < -CS*2 || spider.x > W + CS*2 || spider.timer > 600) {
-    spider = null;
-    scheduleSpider();
-  }
+  spider.x += spider.dx; spider.y += spider.dy; spider.age++;
+  if (spider.y < H - CS*13) spider.dy =  Math.abs(spider.dy);
+  if (spider.y > H - CS*2)  spider.dy = -Math.abs(spider.dy);
+  if (spider.x < -CS*3 || spider.x > W+CS*3 || spider.age > 500) { spider = null; scheduleSpider(); }
 }
 
 function updateFlea() {
-  fleaTimer--;
-  if (fleaTimer <= 0 && !flea) {
-    flea = {
-      x: (Math.floor(Math.random() * COLS) + 0.5) * CS,
-      y: 0,
-      dy: 3 + Math.random() * 2,
-      jumpTimer: 0,
-    };
+  if (--fleaTimer <= 0 && !flea) {
+    flea = { x: (rand(COLS)+0.5)*CS, y: 0, dy: 3 + rand(2), age: 0 };
   }
   if (!flea) return;
-  flea.jumpTimer++;
-  flea.y += flea.dy;
-  // Drop bottles as it falls
-  if (flea.jumpTimer % 15 === 0) {
-    if (!bottles.find(b => Math.abs(b.x - flea.x) < CS && Math.abs(b.y - flea.y) < CS)) {
-      bottles.push({ x: flea.x, y: flea.y, hp: 1, maxHp: 1, poisoned: false });
-    }
+  flea.y += flea.dy; flea.age++;
+  if (flea.age % 14 === 0) {
+    if (!bottles.find(b=>Math.abs(b.x-flea.x)<CS && Math.abs(b.y-flea.y)<CS))
+      bottles.push({ x: flea.x, y: flea.y, hp:1, maxHp:1, poisoned:false });
   }
-  if (flea.y > H + CS) { flea = null; scheduleFlea(); }
+  if (flea.y > H+CS) { flea = null; scheduleFlea(); }
 }
 
 function updateScorpion() {
-  scorpionTimer--;
-  if (scorpionTimer <= 0 && !scorpion) {
-    const side = Math.random() < 0.5;
+  if (--scorpionTimer <= 0 && !scorpion) {
+    const left = Math.random() < 0.5;
     scorpion = {
-      x: side ? -CS : W + CS,
-      y: (Math.floor(Math.random() * 8) + 1) * CS,
-      dx: side ? 2 : -2,
+      x: left ? -CS : W+CS,
+      y: (rand(9)+1)*CS,
+      dx: (2 + level*0.15) * (left?1:-1),
     };
   }
   if (!scorpion) return;
   scorpion.x += scorpion.dx;
-  // Poison bottles it passes through
-  for (let bt of bottles) {
-    if (Math.abs(bt.x - scorpion.x) < CS * 0.7 && Math.abs(bt.y - scorpion.y) < CS * 0.7) {
-      bt.poisoned = true;
+  for (const bt of bottles) {
+    if (Math.abs(bt.x-scorpion.x)<CS*0.7 && Math.abs(bt.y-scorpion.y)<CS*0.7) bt.poisoned = true;
+  }
+  if (scorpion.x < -CS*3 || scorpion.x > W+CS*3) { scorpion = null; scheduleScorpion(); }
+}
+
+function updatePowerUps() {
+  // Float down
+  for (const p of powerUps) p.y += 0.8;
+  powerUps = powerUps.filter(p => p.y < H+CS);
+
+  // Player picks up
+  for (let i = powerUps.length-1; i >= 0; i--) {
+    const p = powerUps[i];
+    if (dist(p.x, p.y, player.x, player.y) < CS*1.1) {
+      activatePowerUp(p.type);
+      spawnParticlesBurst(p.x, p.y, CLR.gold, 20);
+      powerUps.splice(i, 1);
     }
   }
-  if (scorpion.x < -CS*2 || scorpion.x > W + CS*2) {
-    scorpion = null;
-    scheduleScorpion();
+
+  // Tick active power-up
+  if (activePU) {
+    activePU.timer--;
+    if (activePU.timer <= 0) activePU = null;
   }
 }
 
-// ─── Collision Detection ──────────────────────────────────────
+function activatePowerUp(type) {
+  if (type === 'detangle') {
+    // Clear all un-poisoned bottles
+    bottles = bottles.filter(b => b.poisoned);
+    score += 50;
+    spawnParticlesBurst(W/2, H/2, CLR.gold, 50);
+  } else {
+    activePU = { type, timer: PU_DURATION };
+  }
+}
+
+function dropPowerUp(x, y) {
+  if (Math.random() > 0.25) return; // 25% drop chance
+  const type = PU_TYPES[rand(PU_TYPES.length)];
+  powerUps.push({ x, y, type, pulse: 0 });
+}
+
+function updateParticles() {
+  for (const p of particles) {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.12;
+    p.life--;
+    p.alpha = p.life / p.maxLife;
+  }
+  particles = particles.filter(p => p.life > 0);
+}
+
+function spawnParticlesBurst(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const spd   = Math.random() * 4 + 1;
+    particles.push({ x, y, vx: Math.cos(angle)*spd, vy: Math.sin(angle)*spd - 2,
+      color, life: 40 + rand(20), maxLife: 60, alpha: 1, r: 2 + rand(3) });
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  COLLISIONS
+// ══════════════════════════════════════════════════════
 function checkCollisions() {
-  // Bullets vs strand segments
-  for (let bi = bullets.length - 1; bi >= 0; bi--) {
+  for (let bi = bullets.length-1; bi >= 0; bi--) {
     const b = bullets[bi];
     let hit = false;
 
-    for (let si = strand.length - 1; si >= 0; si--) {
-      const s = strand[si];
-      if (dist(b.x, b.y, s.x, s.y) < CS * 0.7) {
-        // Hit! Spawn a bottle where the segment was
-        bottles.push({ x: s.x, y: s.y, hp: 1, maxHp: 1, poisoned: false });
-        // Split strand at this point
-        const tail = strand.splice(si + 1);
-        strand.splice(si, 1); // remove hit seg
-        if (tail.length > 0) {
-          tail[0].head = true;
-          tail[0].dir *= -1;
-          // Push tail back as separate strand (merge into strand array after lead)
-          strand.push(...tail);
+    // vs strands
+    outer:
+    for (let si = 0; si < strands.length; si++) {
+      const seg = strands[si];
+      for (let idx = seg.length-1; idx >= 0; idx--) {
+        const s = seg[idx];
+        if (dist(b.x, b.y, s.x, s.y) < CS*0.7) {
+          spawnParticlesBurst(s.x, s.y, CLR.hot, 8);
+          // Drop a bottle
+          if (!bottles.find(bt=>Math.abs(bt.x-s.x)<CS&&Math.abs(bt.y-s.y)<CS))
+            bottles.push({ x:s.x, y:s.y, hp:1, maxHp:1, poisoned:false });
+          // Split
+          const tail = seg.splice(idx+1);
+          seg.splice(idx, 1);
+          if (tail.length > 0) {
+            tail[0].dir *= -1;
+            strands.push(tail);
+          }
+          score += 10 * level;
+          dropPowerUp(s.x, s.y);
+          hit = true;
+          break outer;
         }
-        score += 10 * level;
-        hit = true;
-        break;
       }
     }
     if (hit) { bullets.splice(bi, 1); continue; }
 
-    // Bullets vs bottles
-    for (let bti = bottles.length - 1; bti >= 0; bti--) {
+    // vs bottles
+    for (let bti = bottles.length-1; bti >= 0; bti--) {
       const bt = bottles[bti];
-      if (dist(b.x, b.y, bt.x, bt.y) < CS * 0.6) {
+      if (dist(b.x, b.y, bt.x, bt.y) < CS*0.6) {
         bt.hp--;
-        if (bt.hp <= 0) { bottles.splice(bti, 1); score += 5; }
+        if (bt.hp <= 0) {
+          spawnParticlesBurst(bt.x, bt.y, CLR.gold, 6);
+          bottles.splice(bti, 1);
+          score += bt.poisoned ? 15 : 5;
+        }
         bullets.splice(bi, 1);
         hit = true;
         break;
@@ -445,75 +592,70 @@ function checkCollisions() {
     }
     if (hit) continue;
 
-    // Bullets vs spider
-    if (spider && dist(b.x, b.y, spider.x, spider.y) < CS * 0.8) {
+    // vs spider
+    if (spider && dist(b.x,b.y,spider.x,spider.y)<CS*0.9) {
       score += 300;
-      spider = null;
-      scheduleSpider();
-      bullets.splice(bi, 1);
-      continue;
+      spawnParticlesBurst(spider.x, spider.y, CLR.lav, 18);
+      dropPowerUp(spider.x, spider.y);
+      spider = null; scheduleSpider();
+      bullets.splice(bi, 1); continue;
     }
 
-    // Bullets vs flea
-    if (flea && dist(b.x, b.y, flea.x, flea.y) < CS * 0.7) {
+    // vs flea
+    if (flea && dist(b.x,b.y,flea.x,flea.y)<CS*0.75) {
       score += 200;
-      flea = null;
-      scheduleFlea();
-      bullets.splice(bi, 1);
-      continue;
+      spawnParticlesBurst(flea.x, flea.y, CLR.hot, 12);
+      dropPowerUp(flea.x, flea.y);
+      flea = null; scheduleFlea();
+      bullets.splice(bi, 1); continue;
     }
 
-    // Bullets vs scorpion
-    if (scorpion && dist(b.x, b.y, scorpion.x, scorpion.y) < CS * 0.8) {
+    // vs scorpion
+    if (scorpion && dist(b.x,b.y,scorpion.x,scorpion.y)<CS*0.9) {
       score += 1000;
-      scorpion = null;
-      scheduleScorpion();
-      bullets.splice(bi, 1);
-      continue;
+      spawnParticlesBurst(scorpion.x, scorpion.y, CLR.green, 25);
+      dropPowerUp(scorpion.x, scorpion.y);
+      scorpion = null; scheduleScorpion();
+      bullets.splice(bi, 1); continue;
     }
   }
 
+  if (invFrames > 0) return;
+
   // Strand vs player
-  for (const s of strand) {
-    if (dist(s.x, s.y, player.x, player.y) < CS * 0.9) {
-      loseLife();
-      return;
+  for (const seg of strands) {
+    for (const s of seg) {
+      if (dist(s.x, s.y, player.x, player.y) < CS*0.85) { loseLife(); return; }
     }
   }
 
   // Spider vs player
-  if (spider && dist(spider.x, spider.y, player.x, player.y) < CS * 1.1) {
-    loseLife();
-    return;
-  }
+  if (spider && dist(spider.x, spider.y, player.x, player.y) < CS*1.1) { loseLife(); return; }
 }
 
 function loseLife() {
   lives--;
-  if (lives <= 0) {
-    gameOver();
-  } else {
-    // Reset player pos, keep bottles & strand
-    player.x = W/2;
-    player.y = H - CS*1.5;
-    bullets = [];
-    spider = null;
-    flea = null;
-    scheduleSpider();
-    scheduleFlea();
-  }
+  spawnParticlesBurst(player.x, player.y, CLR.hot, 30);
+  if (lives <= 0) { gameOver(); return; }
+  player.x = W/2;
+  bullets = [];
+  spider = null; flea = null;
+  scheduleSpider(); scheduleFlea();
+  invFrames = 120; // 2 sec invincibility
 }
 
 function gameOver() {
   gameRunning = false;
   if (score > hiScore) hiScore = score;
+  cancelAnimationFrame(animId);
   const ov = document.getElementById('overlay');
   ov.innerHTML = `
     <div class="tagline">✦ HBBU Arcade ✦</div>
     <h2>Bad Hair Day!</h2>
     <p>The strand got you, babe.<br><br>
-    Final Score: <strong style="color:#FA5185">${score}</strong><br>
-    High Score: <strong style="color:#015A42">${hiScore}</strong><br><br>
+    You reached <strong style="color:#C8A96E">Level ${level}</strong> — ${theme(level).name}<br><br>
+    Final Score: <strong style="color:#FA5185">${score.toLocaleString()}</strong><br>
+    High Score: <strong style="color:#015A42">${hiScore.toLocaleString()}</strong><br><br>
     <em style="color:#F8EEE5aa; font-size:12px;">"Confidence behind the chair starts here."</em></p>
     <button id="start-btn" onclick="startGame()">Try Again</button>
     <div id="controls-hint">← → MOVE &nbsp;|&nbsp; SPACE SHOOT</div>
@@ -521,309 +663,358 @@ function gameOver() {
   ov.style.display = 'flex';
 }
 
-// ─── Draw ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+//  DRAW
+// ══════════════════════════════════════════════════════
 function draw() {
-  // Background
-  ctx.fillStyle = COLORS.dark;
+  // BG
+  ctx.fillStyle = CLR.dark;
   ctx.fillRect(0, 0, W, H);
 
-  // Subtle grid (salon tile feel)
-  ctx.strokeStyle = '#F8EEE508';
+  // Grid
+  ctx.strokeStyle = '#F8EEE50A';
   ctx.lineWidth = 0.5;
   for (let x = 0; x < W; x += CS) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
   for (let y = 0; y < H; y += CS) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
-  // Player zone divider
-  ctx.strokeStyle = '#015A4240';
-  ctx.lineWidth = 1;
+  // Player zone line
+  ctx.strokeStyle = '#015A4250'; ctx.lineWidth = 1;
   ctx.setLineDash([4,4]);
-  ctx.beginPath(); ctx.moveTo(0, H - CS*3); ctx.lineTo(W, H - CS*3); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,H-CS*3); ctx.lineTo(W,H-CS*3); ctx.stroke();
   ctx.setLineDash([]);
 
+  drawParticles();
   drawBottles();
-  drawStrand();
+  for (const seg of strands) drawStrand(seg);
   drawBullets();
+  drawPowerUps();
   drawPlayer();
-  if (spider) drawSpider();
-  if (flea)   drawFlea();
+  if (spider)   drawSpider();
+  if (flea)     drawFlea();
   if (scorpion) drawScorpion();
 }
 
 function drawBottles() {
   for (const bt of bottles) {
-    const x = bt.x, y = bt.y;
-    const poisoned = bt.poisoned;
-
-    // Bottle body
-    ctx.fillStyle = poisoned ? '#4a0' : '#C8A96E';
-    ctx.beginPath();
-    ctx.roundRect(x - CS*0.28, y - CS*0.42, CS*0.56, CS*0.84, 4);
-    ctx.fill();
-
-    // Bottle cap
-    ctx.fillStyle = poisoned ? '#2d8' : COLORS.pink;
-    ctx.beginPath();
-    ctx.roundRect(x - CS*0.18, y - CS*0.52, CS*0.36, CS*0.14, 2);
-    ctx.fill();
-
-    // Label stripe
-    ctx.fillStyle = poisoned ? '#1a5' : '#F8EEE540';
-    ctx.fillRect(x - CS*0.26, y - CS*0.1, CS*0.52, CS*0.2);
-
-    // HP pip
-    if (bt.hp < bt.maxHp) {
-      ctx.fillStyle = COLORS.hotpink;
-      ctx.fillRect(x - CS*0.25, y + CS*0.38, CS*0.5 * (bt.hp/bt.maxHp), CS*0.06);
+    const { x, y, poisoned, hp, maxHp } = bt;
+    ctx.fillStyle = poisoned ? '#3a8' : CLR.gold;
+    ctx.beginPath(); ctx.roundRect(x-CS*.28, y-CS*.42, CS*.56, CS*.84, 4); ctx.fill();
+    ctx.fillStyle = poisoned ? '#1c6' : CLR.pink;
+    ctx.beginPath(); ctx.roundRect(x-CS*.18, y-CS*.52, CS*.36, CS*.14, 2); ctx.fill();
+    ctx.fillStyle = poisoned ? '#0a4' : '#F8EEE540';
+    ctx.fillRect(x-CS*.26, y-CS*.1, CS*.52, CS*.2);
+    if (hp < maxHp) {
+      ctx.fillStyle = CLR.hot;
+      ctx.fillRect(x-CS*.25, y+CS*.38, CS*.5*(hp/maxHp), CS*.06);
     }
   }
 }
 
-function drawStrand() {
-  for (let i = strand.length - 1; i >= 0; i--) {
-    const s = strand[i];
-    const isHead = (i === 0);
-    const t = Date.now() / 300 + i * 0.4;
-    const shimmer = Math.sin(t) * 0.3 + 0.7;
+function drawStrand(seg) {
+  if (seg.length === 0) return;
+  // Connectors first
+  ctx.lineCap = 'round';
+  for (let i = 0; i < seg.length-1; i++) {
+    ctx.strokeStyle = '#FA518570'; ctx.lineWidth = CS*.26;
+    ctx.beginPath(); ctx.moveTo(seg[i].x, seg[i].y); ctx.lineTo(seg[i+1].x, seg[i+1].y); ctx.stroke();
+  }
 
-    // Segment body
-    const r = CS * 0.44;
-    ctx.save();
-    ctx.translate(s.x, s.y);
+  for (let i = seg.length-1; i >= 0; i--) {
+    const s = seg[i], isHead = (i === 0);
+    const t = Date.now()/300 + i*.4;
+    const shimmer = Math.sin(t)*.25 + 0.75;
+    const r = CS*.44;
 
-    // Gradient fill
-    const grad = ctx.createRadialGradient(0,0, r*0.1, 0,0, r);
+    ctx.save(); ctx.translate(s.x, s.y);
+
+    const grad = ctx.createRadialGradient(0,0,r*.1,0,0,r);
     if (isHead) {
-      grad.addColorStop(0, '#FF6BA0');
-      grad.addColorStop(1, COLORS.hotpink);
+      grad.addColorStop(0, '#FF6BA0'); grad.addColorStop(1, CLR.hot);
     } else {
-      grad.addColorStop(0, `rgba(250, 81, 133, ${shimmer})`);
-      grad.addColorStop(1, `rgba(200, 40, 90, ${shimmer})`);
+      grad.addColorStop(0, `rgba(250,81,133,${shimmer})`);
+      grad.addColorStop(1, `rgba(190,30,80,${shimmer})`);
     }
     ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI*2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
 
-    // Braid texture lines
-    ctx.strokeStyle = '#FF0D5860';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.65, 0.3, Math.PI - 0.3);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.65, Math.PI + 0.3, -0.3);
-    ctx.stroke();
+    // Braid lines
+    ctx.strokeStyle = '#FF0D5850'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(0,0,r*.65,.3,Math.PI-.3); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0,r*.65,Math.PI+.3,-.3); ctx.stroke();
 
     if (isHead) {
-      // Eyes
       ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(-r*0.3, -r*0.2, r*0.18, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc( r*0.3, -r*0.2, r*0.18, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#333';
-      ctx.beginPath(); ctx.arc(-r*0.3 + 1, -r*0.2, r*0.09, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc( r*0.3 + 1, -r*0.2, r*0.09, 0, Math.PI*2); ctx.fill();
-      // Angry brows
-      ctx.strokeStyle = '#171411';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(-r*0.5, -r*0.42); ctx.lineTo(-r*0.15, -r*0.35); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo( r*0.5, -r*0.42); ctx.lineTo( r*0.15, -r*0.35); ctx.stroke();
+      ctx.beginPath(); ctx.arc(-r*.3,-r*.2,r*.18,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc( r*.3,-r*.2,r*.18,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#222';
+      ctx.beginPath(); ctx.arc(-r*.28,-r*.18,r*.09,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc( r*.32,-r*.18,r*.09,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#111'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(-r*.5,-r*.42); ctx.lineTo(-r*.15,-r*.34); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo( r*.5,-r*.42); ctx.lineTo( r*.15,-r*.34); ctx.stroke();
     }
-
     ctx.restore();
-
-    // Connector line to next segment
-    if (i < strand.length - 1) {
-      const next = strand[i+1];
-      ctx.strokeStyle = '#FA518580';
-      ctx.lineWidth = CS * 0.25;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(s.x, s.y);
-      ctx.lineTo(next.x, next.y);
-      ctx.stroke();
-    }
   }
 }
 
 function drawBullets() {
   for (const b of bullets) {
-    const grd = ctx.createLinearGradient(b.x, b.y, b.x, b.y - CS*0.7);
-    grd.addColorStop(0, '#FF0D58');
-    grd.addColorStop(1, '#FA5185');
+    const grd = ctx.createLinearGradient(b.x,b.y,b.x,b.y-CS*.7);
+    grd.addColorStop(0,'#FF0D58'); grd.addColorStop(1,'#FA5185');
     ctx.fillStyle = grd;
-    // Serum drop shape
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, CS*0.15, 0, Math.PI*2);
-    ctx.fill();
-    // Tail
-    ctx.strokeStyle = '#FA518880';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(b.x, b.y);
-    ctx.lineTo(b.x, b.y + CS*0.5);
-    ctx.stroke();
-    // Glow
-    ctx.fillStyle = '#FF0D5830';
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, CS*0.3, 0, Math.PI*2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(b.x,b.y,CS*.15,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#FA518870'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(b.x,b.y+CS*.5); ctx.stroke();
+    ctx.fillStyle = '#FF0D5828';
+    ctx.beginPath(); ctx.arc(b.x,b.y,CS*.32,0,Math.PI*2); ctx.fill();
   }
 }
 
-function drawPlayer() {
-  const x = player.x, y = player.y;
-  ctx.save();
-  ctx.translate(x, y);
+function drawPowerUps() {
+  const now = Date.now();
+  for (const p of powerUps) {
+    p.pulse = (p.pulse || 0) + 0.08;
+    const sc = 1 + Math.sin(p.pulse) * 0.12;
+    ctx.save(); ctx.translate(p.x, p.y); ctx.scale(sc, sc);
+    const colors = { wide:'#C8A96E', rapid:'#FA5185', detangle:'#015A42' };
+    const labels = { wide:'WIDE', rapid:'FAST', detangle:'CLR' };
+    // Glow ring
+    ctx.fillStyle = colors[p.type] + '30';
+    ctx.beginPath(); ctx.arc(0,0,CS*.6,0,Math.PI*2); ctx.fill();
+    // Star shape
+    ctx.fillStyle = colors[p.type];
+    drawStar(ctx, 0, 0, 5, CS*.38, CS*.18);
+    // Label
+    ctx.fillStyle = '#171411';
+    ctx.font = `bold ${CS*.28}px 'Courier New'`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(labels[p.type], 0, 0);
+    ctx.restore();
+  }
+}
 
-  // Base / platform
-  ctx.fillStyle = '#015A42';
+function drawStar(ctx, cx, cy, pts, r1, r2) {
   ctx.beginPath();
-  ctx.roundRect(-player.w/2, -player.h*0.3, player.w, player.h*0.6, 6);
-  ctx.fill();
+  for (let i = 0; i < pts*2; i++) {
+    const a = (i * Math.PI / pts) - Math.PI/2;
+    const r = i%2===0 ? r1 : r2;
+    i === 0 ? ctx.moveTo(cx+r*Math.cos(a), cy+r*Math.sin(a))
+             : ctx.lineTo(cx+r*Math.cos(a), cy+r*Math.sin(a));
+  }
+  ctx.closePath(); ctx.fill();
+}
 
-  // Comb teeth (decorative)
-  ctx.fillStyle = '#015A42dd';
-  const teethCount = 7;
-  const teethW = player.w * 0.7;
-  const toothW = teethW / teethCount - 2;
-  for (let i = 0; i < teethCount; i++) {
-    const tx = -teethW/2 + i * (teethW / teethCount);
-    ctx.fillRect(tx, -player.h * 0.55, toothW, player.h * 0.28);
+function drawPlayer() {
+  const { x, y, w, h } = player;
+  // Invincibility flash
+  if (invFrames > 0 && Math.floor(invFrames/6)%2 === 0) return;
+
+  ctx.save(); ctx.translate(x, y);
+
+  // Body
+  ctx.fillStyle = CLR.green;
+  ctx.beginPath(); ctx.roundRect(-w/2,-h*.3,w,h*.6,6); ctx.fill();
+
+  // Comb teeth
+  const teethW = w*.72, toothW = teethW/7 - 2;
+  for (let i = 0; i < 7; i++) {
+    ctx.fillStyle = i%2===0 ? '#017a5b' : '#013d2d';
+    ctx.fillRect(-teethW/2+i*(teethW/7), -h*.56, toothW, h*.28);
   }
 
-  // Barrel / nozzle
-  ctx.fillStyle = COLORS.pink;
-  ctx.beginPath();
-  ctx.roundRect(-CS*0.12, -player.h*0.7, CS*0.24, player.h*0.45, 4);
-  ctx.fill();
-
-  // Nozzle tip
-  ctx.fillStyle = COLORS.hotpink;
-  ctx.beginPath();
-  ctx.arc(0, -player.h*0.72, CS*0.14, 0, Math.PI*2);
-  ctx.fill();
+  // Nozzle
+  const puColor = activePU ? ({ wide:CLR.gold, rapid:CLR.hot, detangle:'#0a8' }[activePU.type]) : CLR.pink;
+  ctx.fillStyle = puColor;
+  ctx.beginPath(); ctx.roundRect(-CS*.12,-h*.72,CS*.24,h*.46,4); ctx.fill();
+  ctx.fillStyle = activePU ? '#fff' : CLR.hot;
+  ctx.beginPath(); ctx.arc(0,-h*.74,CS*.14,0,Math.PI*2); ctx.fill();
 
   // Shine
-  ctx.fillStyle = '#ffffff30';
-  ctx.beginPath();
-  ctx.ellipse(-player.w*0.15, -player.h*0.1, player.w*0.15, player.h*0.1, 0, 0, Math.PI*2);
-  ctx.fill();
+  ctx.fillStyle = '#ffffff28';
+  ctx.beginPath(); ctx.ellipse(-w*.14,-h*.08,w*.14,h*.09,0,0,Math.PI*2); ctx.fill();
 
   ctx.restore();
 }
 
 function drawSpider() {
-  const x = spider.x, y = spider.y;
+  const { x, y } = spider;
   const t = Date.now()/200;
-  ctx.save();
-  ctx.translate(x, y);
-
-  // Web strand above
-  ctx.strokeStyle = '#C97DC860';
-  ctx.lineWidth = 1;
+  ctx.save(); ctx.translate(x,y);
+  ctx.strokeStyle = '#C97DC850'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0,-CS); ctx.lineTo(0,0); ctx.stroke();
-
-  // Body
-  ctx.fillStyle = COLORS.lavender;
-  ctx.beginPath(); ctx.ellipse(0,0, CS*0.35, CS*0.28, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = CLR.lav;
+  ctx.beginPath(); ctx.ellipse(0,0,CS*.35,CS*.28,0,0,Math.PI*2); ctx.fill();
   ctx.fillStyle = '#9a5aaa';
-  ctx.beginPath(); ctx.ellipse(0,-CS*0.2, CS*0.22, CS*0.18, 0, 0, Math.PI*2); ctx.fill();
-
-  // Legs (4 pairs)
-  ctx.strokeStyle = '#C97DC8';
-  ctx.lineWidth = 1.2;
-  for (let i = 0; i < 4; i++) {
-    const ang = (i / 4) * Math.PI + t * 0.3;
-    const leg1x = Math.cos(ang) * CS * 0.7, leg1y = Math.sin(ang) * CS * 0.4 - CS*0.1;
-    ctx.beginPath(); ctx.moveTo(0, -CS*0.1); ctx.lineTo(leg1x, leg1y); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, -CS*0.1); ctx.lineTo(-leg1x, leg1y); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0,-CS*.2,CS*.22,CS*.18,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#C97DC8'; ctx.lineWidth = 1.2;
+  for (let i=0;i<4;i++) {
+    const a = (i/4)*Math.PI+t*.3;
+    const lx=Math.cos(a)*CS*.7, ly=Math.sin(a)*CS*.4-CS*.1;
+    ctx.beginPath(); ctx.moveTo(0,-CS*.1); ctx.lineTo(lx,ly); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,-CS*.1); ctx.lineTo(-lx,ly); ctx.stroke();
   }
-
-  // Eyes
-  ctx.fillStyle = '#FF0D58';
-  ctx.beginPath(); ctx.arc(-CS*0.12, -CS*0.25, CS*0.06, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc( CS*0.12, -CS*0.25, CS*0.06, 0, Math.PI*2); ctx.fill();
-
+  ctx.fillStyle = CLR.hot;
+  ctx.beginPath(); ctx.arc(-CS*.12,-CS*.25,CS*.06,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( CS*.12,-CS*.25,CS*.06,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
 
 function drawFlea() {
-  const x = flea.x, y = flea.y;
-  const bounce = Math.sin(Date.now()/80) * 3;
-  ctx.save();
-  ctx.translate(x, y + bounce);
-
-  ctx.fillStyle = COLORS.hotpink;
-  ctx.beginPath(); ctx.ellipse(0, 0, CS*0.2, CS*0.25, 0, 0, Math.PI*2); ctx.fill();
-
-  // Legs
-  ctx.strokeStyle = COLORS.hotpink;
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(-CS*0.2,  CS*0.05); ctx.lineTo(-CS*0.45, -CS*0.1); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo( CS*0.2,  CS*0.05); ctx.lineTo( CS*0.45, -CS*0.1); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-CS*0.2,  CS*0.15); ctx.lineTo(-CS*0.4,   CS*0.3); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo( CS*0.2,  CS*0.15); ctx.lineTo( CS*0.4,   CS*0.3); ctx.stroke();
-
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(-CS*0.07, -CS*0.08, CS*0.06, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc( CS*0.07, -CS*0.08, CS*0.06, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#333';
-  ctx.beginPath(); ctx.arc(-CS*0.07, -CS*0.07, CS*0.03, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc( CS*0.07, -CS*0.07, CS*0.03, 0, Math.PI*2); ctx.fill();
-
+  const { x, y } = flea;
+  const b = Math.sin(Date.now()/70)*3;
+  ctx.save(); ctx.translate(x,y+b);
+  ctx.fillStyle = CLR.hot;
+  ctx.beginPath(); ctx.ellipse(0,0,CS*.2,CS*.25,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = CLR.hot; ctx.lineWidth = 1;
+  [[-.2,.05,-.45,-.1],[.2,.05,.45,-.1],[-.2,.15,-.4,.3],[.2,.15,.4,.3]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath(); ctx.moveTo(x1*CS,y1*CS); ctx.lineTo(x2*CS,y2*CS); ctx.stroke();
+  });
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(-CS*.07,-CS*.08,CS*.06,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( CS*.07,-CS*.08,CS*.06,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#222';
+  ctx.beginPath(); ctx.arc(-CS*.07,-CS*.07,CS*.03,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( CS*.07,-CS*.07,CS*.03,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
 
 function drawScorpion() {
-  const x = scorpion.x, y = scorpion.y;
-  ctx.save();
-  ctx.translate(x, y);
-  if (scorpion.dx < 0) ctx.scale(-1, 1);
-
-  // Body
-  ctx.fillStyle = COLORS.green;
-  ctx.beginPath(); ctx.ellipse(0, 0, CS*0.45, CS*0.25, 0, 0, Math.PI*2); ctx.fill();
-  // Head
+  const { x, y, dx } = scorpion;
+  ctx.save(); ctx.translate(x,y);
+  if (dx<0) ctx.scale(-1,1);
+  ctx.fillStyle = CLR.green;
+  ctx.beginPath(); ctx.ellipse(0,0,CS*.45,CS*.25,0,0,Math.PI*2); ctx.fill();
   ctx.fillStyle = '#024032';
-  ctx.beginPath(); ctx.ellipse(CS*0.4, 0, CS*0.22, CS*0.18, 0, 0, Math.PI*2); ctx.fill();
-  // Tail (curved stinger)
-  ctx.strokeStyle = '#015A42';
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(-CS*0.4, 0);
-  ctx.bezierCurveTo(-CS*0.7, -CS*0.4, -CS*0.9, -CS*0.6, -CS*0.6, -CS*0.8);
-  ctx.stroke();
-  // Stinger tip
-  ctx.fillStyle = '#FA5185';
-  ctx.beginPath(); ctx.arc(-CS*0.6, -CS*0.8, CS*0.1, 0, Math.PI*2); ctx.fill();
-  // Claws
-  ctx.fillStyle = '#015A42';
-  ctx.beginPath(); ctx.arc(CS*0.7, -CS*0.18, CS*0.12, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(CS*0.7,  CS*0.18, CS*0.12, 0, Math.PI*2); ctx.fill();
-  // Eyes
-  ctx.fillStyle = '#FA5185';
-  ctx.beginPath(); ctx.arc(CS*0.5, -CS*0.07, CS*0.05, 0, Math.PI*2); ctx.fill();
-
+  ctx.beginPath(); ctx.ellipse(CS*.4,0,CS*.22,CS*.18,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#015A42'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(-CS*.4,0); ctx.bezierCurveTo(-CS*.7,-CS*.4,-CS*.9,-CS*.6,-CS*.6,-CS*.8); ctx.stroke();
+  ctx.fillStyle = CLR.pink;
+  ctx.beginPath(); ctx.arc(-CS*.6,-CS*.8,CS*.1,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = CLR.green;
+  ctx.beginPath(); ctx.arc(CS*.7,-CS*.18,CS*.12,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(CS*.7, CS*.18,CS*.12,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = CLR.pink;
+  ctx.beginPath(); ctx.arc(CS*.5,-CS*.07,CS*.05,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
 
-// ─── HUD Update ───────────────────────────────────────────────
-function updateHUD() {
-  document.getElementById('score-disp').textContent = score;
-  document.getElementById('level-disp').textContent = level;
-  document.getElementById('hi-disp').textContent = hiScore;
-  const hearts = ['♥','♥','♥'].map((h,i) => i < lives ? `<span style="color:#FA5185">${h}</span>` : `<span style="color:#333">${h}</span>`).join(' ');
-  document.getElementById('lives-disp').innerHTML = hearts;
+function drawParticles() {
+  for (const p of particles) {
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+//  LEVEL-UP SCREEN
+// ══════════════════════════════════════════════════════
+function drawLevelUpScreen() {
+  // Dim background
+  ctx.fillStyle = '#171411CC';
+  ctx.fillRect(0,0,W,H);
+
+  const th = theme(level);
+  const progress = 1 - (levelUpTimer / LEVELUP_FRAMES);
+  const fadeIn    = Math.min(progress * 5, 1);
+  const pulse     = Math.sin(Date.now()/120) * 6;
+
+  ctx.globalAlpha = fadeIn;
+
+  // Glow aura
+  const aura = ctx.createRadialGradient(W/2,H/2,40,W/2,H/2,220);
+  aura.addColorStop(0, th.glow + '40');
+  aura.addColorStop(1, 'transparent');
+  ctx.fillStyle = aura;
+  ctx.fillRect(0,0,W,H);
+
+  // "LEVEL UP!" banner
+  ctx.shadowColor = th.glow;
+  ctx.shadowBlur  = 30 + pulse;
+  ctx.fillStyle   = '#F8EEE5';
+  ctx.font        = `900 ${54 + pulse*0.5}px 'Courier New'`;
+  ctx.textAlign   = 'center';
+  ctx.textBaseline= 'middle';
+  ctx.fillText('LEVEL UP!', W/2, H/2 - 80);
+
+  // Level number badge
+  ctx.fillStyle = th.glow;
+  ctx.shadowBlur = 20;
+  ctx.font = `bold 28px 'Courier New'`;
+  ctx.fillText(`LEVEL  ${level}`, W/2, H/2 - 20);
+
+  // Theme name
+  ctx.fillStyle   = '#F8EEE5';
+  ctx.shadowBlur  = 10;
+  ctx.font        = `900 32px 'Courier New'`;
+  ctx.fillText(th.name.toUpperCase(), W/2, H/2 + 30);
+
+  // Sub-text
+  ctx.fillStyle   = '#F8EEE5BB';
+  ctx.shadowBlur  = 0;
+  ctx.font        = `14px 'Courier New'`;
+  ctx.fillText(th.sub, W/2, H/2 + 70);
+
+  // Bonus life notice
+  if ((level - 1) % 3 === 0 && level > 1) {
+    ctx.fillStyle = CLR.pink;
+    ctx.shadowColor = CLR.pink; ctx.shadowBlur = 15;
+    ctx.font = `bold 16px 'Courier New'`;
+    ctx.fillText('✦  BONUS LIFE AWARDED  ✦', W/2, H/2 + 110);
+  }
+
+  // Progress bar
+  const barW = 280, barH = 6;
+  ctx.shadowBlur = 0;
+  ctx.fillStyle  = '#F8EEE520';
+  ctx.fillRect(W/2-barW/2, H/2+138, barW, barH);
+  ctx.fillStyle  = th.glow;
+  ctx.fillRect(W/2-barW/2, H/2+138, barW*progress, barH);
+
+  // Strand count hint
+  const nextStrands = level+1 < 3 ? 1 : level+1 < 5 ? 2 : level+1 < 7 ? 3 : 4;
+  ctx.fillStyle   = '#F8EEE570';
+  ctx.font        = `11px 'Courier New'`;
+  ctx.fillText(`Next: ${nextStrands} strand${nextStrands>1?'s':''} · ${20+level*2} bottles · Speed +${Math.round(level*0.18*10)/10}`, W/2, H/2+160);
+
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur  = 0;
+}
+
+// ══════════════════════════════════════════════════════
+//  HUD
+// ══════════════════════════════════════════════════════
+function updateHUD() {
+  document.getElementById('score-disp').textContent = score.toLocaleString();
+  document.getElementById('level-disp').textContent = level;
+  document.getElementById('hi-disp').textContent    = hiScore.toLocaleString();
+  const hearts = Array.from({length:6},(_,i)=>
+    i < lives ? `<span style="color:#FA5185">♥</span>`
+              : `<span style="color:#2a2a2a">♥</span>`
+  ).join(' ');
+  document.getElementById('lives-disp').innerHTML = hearts;
+
+  // Power-up bar
+  const puBar = document.getElementById('powerup-bar');
+  if (activePU) {
+    const pct = Math.round((activePU.timer / PU_DURATION) * 100);
+    const labels = { wide:'WIDE SHOT', rapid:'RAPID FIRE', detangle:'DETANGLER' };
+    const colors  = { wide:'#C8A96E', rapid:'#FA5185',    detangle:'#015A42' };
+    puBar.innerHTML = `<span style="color:${colors[activePU.type]}">✦ ${labels[activePU.type]} ACTIVE ✦</span>
+      <span style="color:#F8EEE560;font-size:10px"> [${pct}%]</span>`;
+  } else {
+    puBar.innerHTML = `<span style="color:#F8EEE530">— ${theme(level).name.toUpperCase()} —</span>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════
 function dist(ax,ay,bx,by) { return Math.sqrt((ax-bx)**2+(ay-by)**2); }
 
-// ─── Initial draw (title screen) ─────────────────────────────
-(function initDraw() {
-  ctx.fillStyle = COLORS.dark;
-  ctx.fillRect(0,0,W,H);
-})();
+// Draw title screen
+ctx.fillStyle = CLR.dark; ctx.fillRect(0,0,W,H);
 </script>
 </body>
 </html>
