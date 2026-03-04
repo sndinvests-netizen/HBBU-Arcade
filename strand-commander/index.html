@@ -817,11 +817,15 @@ function victoryGame() {
 }
 
 function restartGame() {
+  initAudio();
   score = 0; lives = 3; level = 1;
-  activePU = null; dangerFlash = 0; shakeX = 0; shakeY = 0;
-  bullets = []; particles = []; powerUps = [];
+  invFrames = 0; dangerFlash = 0; shakeX = 0; shakeY = 0; dangerSfxCooldown = 0;
+  activePU = null; bullets = []; particles = []; powerUps = [];
   strands = []; bottles = [];
   spider = null; flea = null; scorpion = null;
+  // Clear key state so SPACE restart doesn't immediately fire a bullet
+  Object.keys(keys).forEach(k => { keys[k] = false; });
+  touchFire = false; touchLeft = false; touchRight = false;
   const ov = document.getElementById('overlay');
   ov.style.display = 'none';
   initLevel();
@@ -1209,9 +1213,11 @@ function scaleGame() {
   const avail = document.documentElement.clientWidth || window.innerWidth || GAME_NATURAL_W;
   const scale = Math.min(1, avail / GAME_NATURAL_W);
 
-  // Measure actual content height before applying transform
-  root.style.transform = 'none';
+  // Measure actual content height — hide briefly to avoid flicker
+  root.style.visibility = 'hidden';
+  root.style.transform  = 'none';
   const naturalH = root.scrollHeight || GAME_NATURAL_H;
+  root.style.visibility = '';
 
   // Anchor top-left, center manually
   const offset = Math.max(0, (avail - GAME_NATURAL_W * scale) / 2);
