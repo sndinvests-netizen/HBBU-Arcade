@@ -14,8 +14,11 @@
     background: #171411;
     font-family: 'Courier New', monospace;
     overflow-x: hidden;
-    touch-action: none;
+    /* touch-action ONLY on the canvas — not body, so WP page can still scroll */
     width: 100%;
+  }
+  #canvas-wrap, canvas {
+    touch-action: none;
   }
 
   /* ── Outer centering shell ───────────────────────── */
@@ -1152,22 +1155,27 @@ function scaleGame() {
   const root  = document.getElementById('game-root');
   const shell = document.getElementById('game-shell');
 
-  // Available width = window width inside the iframe / browser tab
-  const avail = Math.min(window.innerWidth, shell.offsetWidth || window.innerWidth);
+  // In an iframe, document.documentElement.clientWidth is the most reliable
+  // source — window.innerWidth can return the parent frame's width in some browsers
+  const avail = Math.max(
+    100,
+    document.documentElement.clientWidth ||
+    shell.clientWidth ||
+    window.innerWidth
+  );
   const scale = Math.min(1, avail / GAME_NATURAL_W);
 
-  root.style.transform = `scale(${scale})`;
+  root.style.transform       = `scale(${scale})`;
   root.style.transformOrigin = 'top center';
 
-  // Shrink the shell to exactly the scaled height so WP page doesn't show gap
-  const scaledH = Math.ceil(root.offsetHeight * scale);
-  shell.style.height = scaledH + 'px';
+  // Collapse shell height to scaled content so WP page has no dead gap below
+  const naturalH = root.scrollHeight;
+  const scaledH  = Math.ceil(naturalH * scale);
+  shell.style.height        = scaledH + 'px';
   document.body.style.height = scaledH + 'px';
 
-  // Tell the parent page (WordPress iframe) the correct height
-  try {
-    window.parent.postMessage({ type: 'hbbu-resize', height: scaledH }, '*');
-  } catch(e) {}
+  // Post height to WordPress so iframe auto-resizes (if using iframe-resizer plugin)
+  try { window.parent.postMessage({ type: 'hbbu-resize', height: scaledH }, '*'); } catch(e) {}
 }
 
 window.addEventListener('resize', scaleGame);
