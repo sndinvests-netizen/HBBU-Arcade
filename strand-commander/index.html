@@ -183,6 +183,7 @@ const ctx = C.getContext('2d');
 const W = C.width, H = C.height;
 const COLS = 28, ROWS = 31;
 const CS = W / COLS; // 20px
+const CS2 = CS * CS; // precomputed for squared-distance checks
 const MAX_STRAND_SPEED = 4.2; // ② Speed cap
 
 const CLR = {
@@ -263,9 +264,12 @@ const SFX = {
 // ══════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════
+let now = 0; // cached timestamp — updated once per frame in loop()
+
 // ④ Load persisted high score
 let score = 0, lives = 3, level = 1;
-let hiScore = parseInt(localStorage.getItem('hbbu_hi') || '0');
+let hiScore = 0;
+try { hiScore = parseInt(localStorage.getItem('hbbu_hi') || '0'); } catch(e) {}
 let gameRunning = false;
 let animId;
 
@@ -367,6 +371,7 @@ function startGame() {
   document.getElementById('overlay').style.display = 'none';
   score = 0; lives = 3; level = 1;
   activePU = null; dangerFlash = 0;
+  _hudCache = { score: -1, level: -1, hi: -1, lives: -1, puKey: '' };
   initLevel();
   gameRunning = true;
   if (animId) cancelAnimationFrame(animId);
@@ -436,6 +441,7 @@ function rand(n) { return Math.floor(Math.random() * n); }
 // ══════════════════════════════════════════════════════
 function loop() {
   if (!gameRunning) return;
+  now = Date.now(); // cache once per frame
   if (levelUpActive) {
     levelUpTimer--;
     drawLevelUpScreen();
@@ -464,7 +470,9 @@ function update() {
   checkCollisions();
   updateHUD();
 
-  if (strands.length === 0 || strands.every(s => s.length === 0)) {
+  let _anyAlive = false;
+  for (let _si = 0; _si < strands.length; _si++) { if (strands[_si].length > 0) { _anyAlive = true; break; } }
+  if (!_anyAlive) {
     score += 500 * level;
     level++;
     if (level > THEMES.length) {
@@ -500,37 +508,52 @@ function updatePlayer() {
 }
 
 function updateBullets() {
-  for (const b of bullets) {
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
     b.y -= b.speed * Math.cos(b.angle || 0);
     b.x += b.speed * Math.sin(b.angle || 0);
+    if (b.y <= -10 || b.x <= -10 || b.x >= W + 10) bullets.splice(i, 1);
   }
-  bullets = bullets.filter(b => b.y > -10 && b.x > -10 && b.x < W+10);
 }
+
+// Pre-allocated prev-position buffer — avoids per-frame allocation in updateStrands
+let _prevBuf = [];
 
 function updateStrands() {
   let inDanger = false;
+  const dangerY = H - CS * 3.5;
 
   for (let si = strands.length - 1; si >= 0; si--) {
     const seg = strands[si];
     if (seg.length === 0) { strands.splice(si, 1); continue; }
 
     const lead = seg[0];
-    const prev = seg.map(s => ({ x: s.x, y: s.y }));
 
-    // ⑤ Poisoned bottle speed boost — strand moves faster near poisoned bottles
+    // Snapshot previous positions into reusable buffer (no allocation)
+    if (_prevBuf.length < seg.length) {
+      while (_prevBuf.length < seg.length) _prevBuf.push({ x: 0, y: 0 });
+    }
+    for (let i = 0; i < seg.length; i++) { _prevBuf[i].x = seg[i].x; _prevBuf[i].y = seg[i].y; }
+
+    // ⑤ Poisoned bottle speed boost — use squared distance, no sqrt
     let speedMult = 1;
-    for (const bt of bottles) {
-      if (bt.poisoned && dist(lead.x, lead.y, bt.x, bt.y) < CS * 2.5) {
-        speedMult = 1.75;
-        break;
+    const poisonR2 = CS2 * 6.25; // (CS*2.5)²
+    for (let bi = 0; bi < bottles.length; bi++) {
+      const bt = bottles[bi];
+      if (bt.poisoned) {
+        const dx = lead.x - bt.x, dy = lead.y - bt.y;
+        if (dx*dx + dy*dy < poisonR2) { speedMult = 1.75; break; }
       }
     }
 
     lead.x += lead.speed * lead.dir * speedMult;
 
     // Bottle collision → reverse & drop down
-    for (const bt of bottles) {
-      if (dist(lead.x, lead.y, bt.x, bt.y) < CS * 0.9) {
+    const btCollR2 = CS2 * 0.81; // (CS*0.9)²
+    for (let bi = 0; bi < bottles.length; bi++) {
+      const bt = bottles[bi];
+      const dx = lead.x - bt.x, dy = lead.y - bt.y;
+      if (dx*dx + dy*dy < btCollR2) {
         lead.dir *= -1;
         lead.y   += CS;
         lead.x   += lead.speed * lead.dir * 2;
@@ -544,13 +567,17 @@ function updateStrands() {
 
     // Trail
     for (let i = 1; i < seg.length; i++) {
-      seg[i].x = prev[i-1].x;
-      seg[i].y = prev[i-1].y;
+      seg[i].x = _prevBuf[i-1].x;
+      seg[i].y = _prevBuf[i-1].y;
     }
-    for (const s of seg) s.y = Math.max(CS*.5, s.y);
+    for (let i = 0; i < seg.length; i++) { if (seg[i].y < CS*.5) seg[i].y = CS*.5; }
 
     // ③ Danger check — any segment in player zone?
-    if (seg.some(s => s.y > H - CS * 3.5)) inDanger = true;
+    if (!inDanger) {
+      for (let i = 0; i < seg.length; i++) {
+        if (seg[i].y > dangerY) { inDanger = true; break; }
+      }
+    }
   }
 
   // ③ Ramp danger flash
@@ -597,8 +624,11 @@ function updateFlea() {
   if (!flea) return;
   flea.y += flea.dy; flea.age++;
   if (flea.age % 14 === 0 && flea.y < H - CS*3) {
-    if (!bottles.find(b => Math.abs(b.x-flea.x)<CS && Math.abs(b.y-flea.y)<CS))
-      bottles.push({ x: flea.x, y: flea.y, hp:1, maxHp:1, poisoned: false });
+    let _fleaBottleHere = false;
+    for (let _fi = 0; _fi < bottles.length; _fi++) {
+      if (Math.abs(bottles[_fi].x - flea.x) < CS && Math.abs(bottles[_fi].y - flea.y) < CS) { _fleaBottleHere = true; break; }
+    }
+    if (!_fleaBottleHere) bottles.push({ x: flea.x, y: flea.y, hp:1, maxHp:1, poisoned: false });
   }
   if (flea.y > H + CS) { flea = null; scheduleFlea(); }
 }
@@ -621,12 +651,13 @@ function updateScorpion() {
 }
 
 function updatePowerUps() {
-  for (const p of powerUps) p.y += 0.8;
-  powerUps = powerUps.filter(p => p.y < H + CS);
-
-  for (let i = powerUps.length-1; i >= 0; i--) {
+  const puPickR2 = CS2 * 1.21; // (CS*1.1)²
+  for (let i = powerUps.length - 1; i >= 0; i--) {
     const p = powerUps[i];
-    if (dist(p.x, p.y, player.x, player.y) < CS*1.1) {
+    p.y += 0.8;
+    if (p.y >= H + CS) { powerUps.splice(i, 1); continue; }
+    const dx = p.x - player.x, dy = p.y - player.y;
+    if (dx*dx + dy*dy < puPickR2) {
       activatePowerUp(p.type);
       spawnBurst(p.x, p.y, CLR.gold, 20);
       SFX.pickup();
@@ -652,11 +683,12 @@ function dropPowerUp(x, y) {
 }
 
 function updateParticles() {
-  for (const p of particles) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
     p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.life--;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
     p.alpha = p.life / p.maxLife;
   }
-  particles = particles.filter(p => p.life > 0);
 }
 
 function spawnBurst(x, y, color, count) {
@@ -672,9 +704,19 @@ function spawnBurst(x, y, color, count) {
 //  COLLISIONS
 // ══════════════════════════════════════════════════════
 function checkCollisions() {
+  // Precomputed squared radii (avoids Math.sqrt on every check)
+  const bHitStrand2  = CS2 * 0.49;   // (CS*.7)²
+  const bHitBottle2  = CS2 * 0.36;   // (CS*.6)²
+  const bHitSpider2  = CS2 * 0.81;   // (CS*.9)²
+  const bHitFlea2    = CS2 * 0.5625; // (CS*.75)²
+  const bHitScorp2   = CS2 * 0.81;   // (CS*.9)²
+  const plHitStrand2 = CS2 * 0.7225; // (CS*.85)²
+  const plHitSpider2 = CS2 * 1.21;   // (CS*1.1)²
+
   for (let bi = bullets.length-1; bi >= 0; bi--) {
     const b = bullets[bi];
     let hit = false;
+    let bdx, bdy;
 
     // Bullets vs strands
     outer:
@@ -682,11 +724,16 @@ function checkCollisions() {
       const seg = strands[si];
       for (let idx = seg.length-1; idx >= 0; idx--) {
         const s = seg[idx];
-        if (dist(b.x, b.y, s.x, s.y) < CS*.7) {
+        bdx = b.x - s.x; bdy = b.y - s.y;
+        if (bdx*bdx + bdy*bdy < bHitStrand2) {
           spawnBurst(s.x, s.y, CLR.hot, 8);
           SFX.hit();
-          if (!bottles.find(bt => Math.abs(bt.x-s.x)<CS && Math.abs(bt.y-s.y)<CS))
-            bottles.push({ x:s.x, y:s.y, hp:1, maxHp:1, poisoned:false });
+          // Check bottle overlap without .find() callback
+          let bottleHere = false;
+          for (let k = 0; k < bottles.length; k++) {
+            if (Math.abs(bottles[k].x - s.x) < CS && Math.abs(bottles[k].y - s.y) < CS) { bottleHere = true; break; }
+          }
+          if (!bottleHere) bottles.push({ x:s.x, y:s.y, hp:1, maxHp:1, poisoned:false });
           const tail = seg.splice(idx+1);
           seg.splice(idx, 1);
           if (tail.length > 0) { tail[0].dir *= -1; strands.push(tail); }
@@ -701,7 +748,8 @@ function checkCollisions() {
     // Bullets vs bottles
     for (let bti = bottles.length-1; bti >= 0; bti--) {
       const bt = bottles[bti];
-      if (dist(b.x, b.y, bt.x, bt.y) < CS*.6) {
+      bdx = b.x - bt.x; bdy = b.y - bt.y;
+      if (bdx*bdx + bdy*bdy < bHitBottle2) {
         bt.hp--;
         SFX.bottle();
         if (bt.hp <= 0) {
@@ -715,45 +763,62 @@ function checkCollisions() {
     if (hit) continue;
 
     // Bullets vs spider
-    if (spider && dist(b.x, b.y, spider.x, spider.y) < CS*.9) {
-      score += 300;
-      spawnBurst(spider.x, spider.y, CLR.lav, 18);
-      SFX.spider();
-      dropPowerUp(spider.x, spider.y);
-      spider = null; scheduleSpider();
-      bullets.splice(bi, 1); continue;
+    if (spider) {
+      bdx = b.x - spider.x; bdy = b.y - spider.y;
+      if (bdx*bdx + bdy*bdy < bHitSpider2) {
+        score += 300;
+        spawnBurst(spider.x, spider.y, CLR.lav, 18);
+        SFX.spider();
+        dropPowerUp(spider.x, spider.y);
+        spider = null; scheduleSpider();
+        bullets.splice(bi, 1); continue;
+      }
     }
 
     // Bullets vs flea
-    if (flea && dist(b.x, b.y, flea.x, flea.y) < CS*.75) {
-      score += 200;
-      spawnBurst(flea.x, flea.y, CLR.hot, 12);
-      SFX.hit();
-      dropPowerUp(flea.x, flea.y);
-      flea = null; scheduleFlea();
-      bullets.splice(bi, 1); continue;
+    if (flea) {
+      bdx = b.x - flea.x; bdy = b.y - flea.y;
+      if (bdx*bdx + bdy*bdy < bHitFlea2) {
+        score += 200;
+        spawnBurst(flea.x, flea.y, CLR.hot, 12);
+        SFX.hit();
+        dropPowerUp(flea.x, flea.y);
+        flea = null; scheduleFlea();
+        bullets.splice(bi, 1); continue;
+      }
     }
 
     // Bullets vs scorpion
-    if (scorpion && dist(b.x, b.y, scorpion.x, scorpion.y) < CS*.9) {
-      score += 1000;
-      spawnBurst(scorpion.x, scorpion.y, CLR.green, 25);
-      SFX.scorpion();
-      dropPowerUp(scorpion.x, scorpion.y);
-      scorpion = null; scheduleScorpion();
-      bullets.splice(bi, 1); continue;
+    if (scorpion) {
+      bdx = b.x - scorpion.x; bdy = b.y - scorpion.y;
+      if (bdx*bdx + bdy*bdy < bHitScorp2) {
+        score += 1000;
+        spawnBurst(scorpion.x, scorpion.y, CLR.green, 25);
+        SFX.scorpion();
+        dropPowerUp(scorpion.x, scorpion.y);
+        scorpion = null; scheduleScorpion();
+        bullets.splice(bi, 1); continue;
+      }
     }
   }
 
   if (invFrames > 0) return;
 
   // Strand vs player
-  for (const seg of strands)
-    for (const s of seg)
-      if (dist(s.x, s.y, player.x, player.y) < CS*.85) { loseLife(); return; }
+  for (let si = 0; si < strands.length; si++) {
+    const seg = strands[si];
+    for (let i = 0; i < seg.length; i++) {
+      const s = seg[i];
+      const dx = s.x - player.x, dy = s.y - player.y;
+      if (dx*dx + dy*dy < plHitStrand2) { loseLife(); return; }
+    }
+  }
 
   // Spider vs player
-  if (spider && dist(spider.x, spider.y, player.x, player.y) < CS*1.1) { loseLife(); return; }
+  if (spider) {
+    const dx = spider.x - player.x, dy = spider.y - player.y;
+    if (dx*dx + dy*dy < plHitSpider2) { loseLife(); return; }
+  }
 }
 
 function loseLife() {
@@ -774,7 +839,7 @@ function gameOver() {
   // ④ Persist high score
   if (score > hiScore) {
     hiScore = score;
-    localStorage.setItem('hbbu_hi', hiScore);
+    try { localStorage.setItem('hbbu_hi', hiScore); } catch(e) {}
   }
   cancelAnimationFrame(animId);
   const ov = document.getElementById('overlay');
@@ -799,7 +864,7 @@ function victoryGame() {
   [523, 659, 784, 1047].forEach((f, i) => beep(f, f * 1.1, 0.25, 0.2, 'sine', i * 0.15));
   if (score > hiScore) {
     hiScore = score;
-    localStorage.setItem('hbbu_hi', hiScore);
+    try { localStorage.setItem('hbbu_hi', hiScore); } catch(e) {}
   }
   const ov = document.getElementById('overlay');
   const newRecord = score >= hiScore ? `<br><strong style="color:#C8A96E">✦ NEW HIGH SCORE! ✦</strong>` : '';
@@ -826,6 +891,7 @@ function restartGame() {
   // Clear key state so SPACE restart doesn't immediately fire a bullet
   Object.keys(keys).forEach(k => { keys[k] = false; });
   touchFire = false; touchLeft = false; touchRight = false;
+  _hudCache = { score: -1, level: -1, hi: -1, lives: -1, puKey: '' };
   const ov = document.getElementById('overlay');
   ov.style.display = 'none';
   initLevel();
@@ -879,12 +945,12 @@ function draw() {
 //  DRAW FUNCTIONS
 // ══════════════════════════════════════════════════════
 function drawBottles() {
+  const _poisonPulse = Math.sin(now / 200) * 0.3 + 0.7; // compute once per frame
   for (const bt of bottles) {
     const { x, y, poisoned, hp, maxHp } = bt;
     // ⑤ Poisoned bottles pulse to indicate danger
     if (poisoned) {
-      const pulse = Math.sin(Date.now()/200) * 0.3 + 0.7;
-      ctx.fillStyle = `rgba(51,170,80,${pulse})`;
+      ctx.fillStyle = `rgba(51,170,80,${_poisonPulse})`;
     } else {
       ctx.fillStyle = CLR.gold;
     }
@@ -916,7 +982,7 @@ function drawStrand(seg) {
   }
   for (let i = seg.length-1; i >= 0; i--) {
     const s = seg[i], isHead = (i === 0);
-    const t = Date.now()/300 + i*.4;
+    const t = now/300 + i*.4;
     const shimmer = Math.sin(t)*.25 + 0.75;
     const r = CS*.44;
     ctx.save(); ctx.translate(s.x, s.y);
@@ -1013,7 +1079,7 @@ function drawPlayer() {
 
 function drawSpider() {
   const { x, y } = spider;
-  const t = Date.now()/200;
+  const t = now/200;
   ctx.save(); ctx.translate(x,y);
   ctx.strokeStyle = '#C97DC850'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0,-CS); ctx.lineTo(0,0); ctx.stroke();
@@ -1036,7 +1102,7 @@ function drawSpider() {
 
 function drawFlea() {
   const { x, y } = flea;
-  const b = Math.sin(Date.now()/70)*3;
+  const b = Math.sin(now/70)*3;
   ctx.save(); ctx.translate(x,y+b);
   ctx.fillStyle = CLR.hot;
   ctx.beginPath(); ctx.ellipse(0,0,CS*.2,CS*.25,0,0,Math.PI*2); ctx.fill();
@@ -1119,7 +1185,7 @@ function drawLevelUpScreen() {
   const th = theme(level);
   const progress = 1 - (levelUpTimer / LEVELUP_FRAMES);
   const fadeIn   = Math.min(progress * 5, 1);
-  const pulse    = Math.sin(Date.now()/120) * 6;
+  const pulse    = Math.sin(now/120) * 6;
 
   ctx.globalAlpha = fadeIn;
 
@@ -1168,27 +1234,50 @@ function drawLevelUpScreen() {
 }
 
 // ══════════════════════════════════════════════════════
-//  HUD
+//  HUD — cached DOM updates (only write when value changes)
 // ══════════════════════════════════════════════════════
-function updateHUD() {
-  document.getElementById('score-disp').textContent = score.toLocaleString();
-  document.getElementById('level-disp').textContent = level;
-  document.getElementById('hi-disp').textContent    = hiScore.toLocaleString();
-  const hearts = Array.from({length:6}, (_,i) =>
-    i < lives ? `<span style="color:#FA5185">♥</span>`
-              : `<span style="color:#2a2a2a">♥</span>`
-  ).join(' ');
-  document.getElementById('lives-disp').innerHTML = hearts;
+const _hudEl = {
+  score: document.getElementById('score-disp'),
+  level: document.getElementById('level-disp'),
+  hi:    document.getElementById('hi-disp'),
+  lives: document.getElementById('lives-disp'),
+  puBar: document.getElementById('powerup-bar'),
+};
+let _hudCache = { score: -1, level: -1, hi: -1, lives: -1, puKey: '' };
 
-  const puBar = document.getElementById('powerup-bar');
-  if (activePU) {
-    const pct = Math.round((activePU.timer / PU_DURATION) * 100);
-    const labels = { wide:'WIDE SHOT', rapid:'RAPID FIRE', detangle:'DETANGLER' };
-    const colors  = { wide: CLR.gold,  rapid: CLR.pink,   detangle: CLR.green };
-    puBar.innerHTML = `<span style="color:${colors[activePU.type]}">✦ ${labels[activePU.type]} ACTIVE ✦</span>
-      <span style="color:#F8EEE560;font-size:10px"> [${pct}%]</span>`;
-  } else {
-    puBar.innerHTML = `<span style="color:#F8EEE530">— ${theme(level).name.toUpperCase()} —</span>`;
+const _puLabels = { wide:'WIDE SHOT', rapid:'RAPID FIRE', detangle:'DETANGLER' };
+const _puColors  = { wide: CLR.gold,  rapid: CLR.pink,   detangle: CLR.green };
+
+function updateHUD() {
+  if (score !== _hudCache.score) {
+    _hudEl.score.textContent = score.toLocaleString();
+    _hudCache.score = score;
+  }
+  if (level !== _hudCache.level) {
+    _hudEl.level.textContent = level;
+    _hudCache.level = level;
+  }
+  if (hiScore !== _hudCache.hi) {
+    _hudEl.hi.textContent = hiScore.toLocaleString();
+    _hudCache.hi = hiScore;
+  }
+  if (lives !== _hudCache.lives) {
+    let h = '';
+    for (let i = 0; i < 6; i++)
+      h += (i < lives ? '<span style="color:#FA5185">♥</span>' : '<span style="color:#2a2a2a">♥</span>') + (i < 5 ? ' ' : '');
+    _hudEl.lives.innerHTML = h;
+    _hudCache.lives = lives;
+  }
+
+  const puKey = activePU ? `${activePU.type}:${Math.round((activePU.timer / PU_DURATION) * 100)}` : '';
+  if (puKey !== _hudCache.puKey) {
+    if (activePU) {
+      const pct = Math.round((activePU.timer / PU_DURATION) * 100);
+      _hudEl.puBar.innerHTML = `<span style="color:${_puColors[activePU.type]}">✦ ${_puLabels[activePU.type]} ACTIVE ✦</span><span style="color:#F8EEE560;font-size:10px"> [${pct}%]</span>`;
+    } else {
+      _hudEl.puBar.innerHTML = `<span style="color:#F8EEE530">— ${theme(level).name.toUpperCase()} —</span>`;
+    }
+    _hudCache.puKey = puKey;
   }
 }
 
@@ -1196,6 +1285,7 @@ function updateHUD() {
 //  HELPERS
 // ══════════════════════════════════════════════════════
 function dist(ax,ay,bx,by) { return Math.sqrt((ax-bx)**2+(ay-by)**2); }
+function dist2(ax,ay,bx,by) { return (ax-bx)**2+(ay-by)**2; } // squared — no sqrt, use for comparisons
 
 // Initial blank frame
 ctx.fillStyle = CLR.dark; ctx.fillRect(0,0,W,H);
