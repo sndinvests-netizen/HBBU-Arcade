@@ -53,7 +53,7 @@
       <strong style="color:#015A42">Bleach Scorpions</strong> poisoning your products!<br><br>
       <span style="color:rgba(248,238,229,.5);font-size:11px;">Bonus life every 3 levels &middot; Multiple strands at level 3+</span>
     </p>
-    <button class="hbbu-sc-btn" onclick="hbbuScStart()">Start Styling</button>
+    <button id="hbbu-sc-start-btn" class="hbbu-sc-btn">Start Styling</button>
     <div class="hbbu-sc-hint">&#8592; &#8594; MOVE &nbsp;|&nbsp; SPACE SHOOT &nbsp;|&nbsp; Touch supported</div>
   </div>
 </div>
@@ -889,6 +889,8 @@ scaleGame();
 // ── Expose onclick handlers to global scope ────────────
 window.hbbuScStart   = startGame;
 window.hbbuScRestart = restartGame;
+var _startBtn=document.getElementById('hbbu-sc-start-btn');
+if(_startBtn) _startBtn.addEventListener('click',function(){ startGame(); });
 
 })();
 </script>
