@@ -193,15 +193,15 @@ const CLR = {
 };
 
 const THEMES = [
-  { name: 'Babylights',      sub: 'Fine sections — keep it subtle, babe.',        glow: '#FA5185' },
-  { name: 'Balayage',        sub: 'Sun-kissed color, hand-painted to perfection.', glow: '#C8A96E' },
-  { name: 'Color Correction',sub: 'Fix the damage. Own the transformation.',       glow: '#C97DC8' },
-  { name: 'Foilayage',       sub: 'Foils meet balayage — best of both worlds.',    glow: '#015A42' },
-  { name: 'Extensions',      sub: 'Length & volume unlocked. You earned it.',      glow: '#FA5185' },
-  { name: 'Bleach & Tone',   sub: 'Lift it. Tone it. Slay it.',                   glow: '#FF0D58' },
-  { name: 'Root Smudge',     sub: "Seamless root to tip. Chef's kiss.",            glow: '#C8A96E' },
-  { name: 'Gloss & Glaze',   sub: 'Shine, babe. Make them turn heads.',            glow: '#C97DC8' },
-  { name: 'Master Stylist',  sub: 'Behind the chair. No one can stop you.',        glow: '#FF0D58' },
+  { name: 'Babylights',      sub: 'Fine sections — keep it subtle, babe.',        hint: 'Single strand — find your rhythm.',                        glow: '#FA5185' },
+  { name: 'Balayage',        sub: 'Sun-kissed color, hand-painted to perfection.', hint: 'Strands move opposite — watch both flanks!',              glow: '#C8A96E' },
+  { name: 'Color Correction',sub: 'Fix the damage. Own the transformation.',       hint: '⚠ BOSS WAVE — it splits into 3. Aim for the head!',       glow: '#C97DC8' },
+  { name: 'Foilayage',       sub: 'Foils meet balayage — best of both worlds.',    hint: 'Armored bottles need 3 hits — clear strands first.',       glow: '#015A42' },
+  { name: 'Extensions',      sub: 'Length & volume unlocked. You earned it.',      hint: 'Strands crossing — grab TONER to slow them down.',         glow: '#FA5185' },
+  { name: 'Bleach & Tone',   sub: 'Lift it. Tone it. Slay it.',                   hint: '⚠ BOSS WAVE + scorpion blitz — grab TONER first!',        glow: '#FF0D58' },
+  { name: 'Root Smudge',     sub: "Seamless root to tip. Chef's kiss.",            hint: '3 crossing strands — clear the center lane first.',        glow: '#C8A96E' },
+  { name: 'Gloss & Glaze',   sub: 'Shine, babe. Make them turn heads.',            hint: 'Poison spreads fast — kill the scorpion on sight.',        glow: '#C97DC8' },
+  { name: 'Master Stylist',  sub: 'Behind the chair. No one can stop you.',        hint: '⚠ FINAL BOSS — 4 strands + mega strand. Give it all!',   glow: '#FF0D58' },
 ];
 function theme(lvl) { return THEMES[Math.min(lvl - 1, THEMES.length - 1)]; }
 
@@ -277,13 +277,17 @@ let animId;
 let levelUpActive = false, levelUpTimer = 0;
 const LEVELUP_FRAMES = 160;
 
+let bossWaveActive = false, bossWaveDefeated = false;
+let bossAnnounceTimer = 0;
+const BOSS_ANNOUNCE_FRAMES = 100;
+
 let particles = [];
 let player = { x: W/2, y: H - CS*1.5, w: CS*1.8, h: CS*1.2, speed: 5, cooldown: 0 };
 let bullets = [], bottles = [], strands = [];
 let spider = null, flea = null, scorpion = null;
 let spiderTimer = 0, fleaTimer = 0, scorpionTimer = 0;
 let powerUps = [], activePU = null;
-const PU_TYPES = ['wide', 'rapid', 'detangle'];
+const PU_TYPES = ['wide', 'rapid', 'detangle', 'toner'];
 const PU_DURATION = 420;
 let invFrames = 0;
 
@@ -383,6 +387,7 @@ function initLevel() {
   player.x = W / 2; player.y = H - CS * 1.5;
   bullets = []; particles = []; powerUps = [];
   activePU = null; dangerFlash = 0; shakeX = 0; shakeY = 0;
+  bossWaveActive = false; bossWaveDefeated = false; bossAnnounceTimer = 0;
 
   // Bonus life every 3 levels
   if (level > 1 && (level - 1) % 3 === 0) {
@@ -390,7 +395,7 @@ function initLevel() {
     spawnBurst(W/2, H/2, CLR.pink, 40);
   }
 
-  // Bottles
+  // Bottles — level 4+ spawns some armored bottles (hp 3, needs 3 hits)
   bottles = [];
   const bCount = 18 + level * 2;
   for (let i = 0; i < bCount; i++) {
@@ -399,33 +404,55 @@ function initLevel() {
       const bx = (Math.floor(Math.random() * COLS) + 0.5) * CS;
       const by = (Math.floor(Math.random() * (ROWS - 9)) + 2) * CS;
       if (!bottles.find(b => Math.abs(b.x-bx)<CS && Math.abs(b.y-by)<CS)) {
-        bottles.push({ x: bx, y: by, hp: 2, maxHp: 2, poisoned: false });
+        const armored = level >= 4 && Math.random() < 0.30;
+        bottles.push({ x: bx, y: by, hp: armored ? 3 : 2, maxHp: armored ? 3 : 2, poisoned: false, armored });
         placed = true;
       }
     }
   }
 
-  // Strands
+  // Strands — even levels alternate direction so strands cross
   const numStrands = level < 3 ? 1 : level < 5 ? 2 : level < 7 ? 3 : 4;
   strands = [];
-  for (let s = 0; s < numStrands; s++) spawnStrand(s * 2);
+  for (let s = 0; s < numStrands; s++) {
+    const rev = (level % 2 === 0) && (s % 2 === 1);
+    spawnStrand(s * 2, rev);
+  }
 
   spider = null; flea = null; scorpion = null;
   scheduleSpider(); scheduleFlea(); scheduleScorpion();
 }
 
-function spawnStrand(rowOffset = 0) {
+function spawnStrand(rowOffset = 0, reverseDir = false) {
   const segCount = Math.max(8, 14 + level * 2 - strands.length * 4);
   const segs = [];
   // ② Hard speed cap
   const speed = Math.min((0.5 + level * 0.18) * 0.9, MAX_STRAND_SPEED);
-  let dir = 1, col = 0, row = rowOffset;
+  // Reverse: head starts top-right moving left, creating cross-traffic on even levels
+  let dir = reverseDir ? -1 : 1;
+  let col = reverseDir ? COLS - 1 : 0;
+  let row = rowOffset;
+  for (let i = 0; i < segCount; i++) {
+    segs.push({ x: (col+0.5)*CS, y: (row+0.5)*CS, dir, speed });
+    if (reverseDir) { col--; } else { col++; }
+    if (col >= COLS) { col = COLS-1; row++; dir = -1; reverseDir = false; }
+    else if (col < 0) { col = 0;      row++; dir =  1; reverseDir = false; }
+  }
+  strands.push(segs);
+}
+
+function spawnBossStrand() {
+  const segCount = 28;
+  const segs = [];
+  const speed = Math.min((0.5 + level * 0.18) * 1.35, MAX_STRAND_SPEED);
+  let dir = 1, col = 0, row = 0;
   for (let i = 0; i < segCount; i++) {
     segs.push({ x: (col+0.5)*CS, y: (row+0.5)*CS, dir, speed });
     col++;
     if (col >= COLS) { col = COLS-1; row++; dir = -1; }
-    else if (col < 0) { col = 0; row++; dir = 1; }
+    else if (col < 0) { col = 0;      row++; dir =  1; }
   }
+  segs.isBoss = true;
   strands.push(segs);
 }
 
@@ -473,17 +500,36 @@ function update() {
 
   let _anyAlive = false;
   for (let _si = 0; _si < strands.length; _si++) { if (strands[_si].length > 0) { _anyAlive = true; break; } }
-  if (!_anyAlive) {
-    score += 500 * level;
-    level++;
-    if (level > THEMES.length) {
-      victoryGame();
+
+  if (!_anyAlive && bossAnnounceTimer <= 0) {
+    const isBossLvl = (level === 3 || level === 6 || level === 9);
+    if (isBossLvl && !bossWaveActive && !bossWaveDefeated) {
+      // Trigger boss wave mid-level
+      bossWaveActive = true;
+      bossAnnounceTimer = BOSS_ANNOUNCE_FRAMES;
+      spawnBossStrand();
+      [200, 150, 400].forEach((f, i) => beep(f, f * 1.4, 0.2, 0.2, 'sawtooth', i * 0.12));
     } else {
-      SFX.levelUp();
-      levelUpActive = true;
-      levelUpTimer  = LEVELUP_FRAMES;
+      if (bossWaveActive) {
+        // Boss defeated — bonus + guaranteed power-up
+        score += 1000 * level;
+        spawnBurst(W/2, H/2, CLR.gold, 60);
+        powerUps.push({ x: W/2, y: H/2 - CS*2, type: PU_TYPES[rand(PU_TYPES.length)], pulse: 0 });
+      }
+      bossWaveActive = false;
+      bossWaveDefeated = false;
+      score += 500 * level;
+      level++;
+      if (level > THEMES.length) {
+        victoryGame();
+      } else {
+        SFX.levelUp();
+        levelUpActive = true;
+        levelUpTimer  = LEVELUP_FRAMES;
+      }
     }
   }
+  if (bossAnnounceTimer > 0) bossAnnounceTimer--;
 }
 
 function updatePlayer() {
@@ -547,7 +593,8 @@ function updateStrands() {
       }
     }
 
-    lead.x += lead.speed * lead.dir * speedMult;
+    const tonerMult = (activePU?.type === 'toner') ? 0.38 : 1;
+    lead.x += lead.speed * lead.dir * speedMult * tonerMult;
 
     // Bottle collision → reverse & drop down
     const btCollR2 = CS2 * 0.81; // (CS*0.9)²
@@ -672,6 +719,12 @@ function activatePowerUp(type) {
     bottles = bottles.filter(b => b.poisoned);
     score += 50;
     spawnBurst(W/2, H/2, CLR.gold, 50);
+  } else if (type === 'toner') {
+    // Neutralize all poison AND slow strands for the duration
+    bottles.forEach(b => { b.poisoned = false; });
+    score += 75;
+    spawnBurst(W/2, H/2, '#88FFCC', 50);
+    activePU = { type, timer: PU_DURATION };
   } else {
     activePU = { type, timer: PU_DURATION };
   }
@@ -737,7 +790,22 @@ function checkCollisions() {
           if (!bottleHere) bottles.push({ x:s.x, y:s.y, hp:1, maxHp:1, poisoned:false });
           const tail = seg.splice(idx+1);
           seg.splice(idx, 1);
-          if (tail.length > 0) { tail[0].dir *= -1; strands.push(tail); }
+          if (tail.length > 0) {
+            tail[0].dir *= -1;
+            if (seg.isBoss && tail.length >= 6) {
+              // Boss strand splits into 3 pieces
+              const mid = Math.floor(tail.length / 2);
+              const tail2 = tail.splice(mid);
+              tail.isBoss = true;
+              tail2.isBoss = true;
+              tail2[0].dir *= -1;
+              strands.push(tail);
+              strands.push(tail2);
+            } else {
+              if (seg.isBoss) tail.isBoss = true;
+              strands.push(tail);
+            }
+          }
           score += 10 * level;
           dropPowerUp(s.x, s.y);
           hit = true; break outer;
@@ -887,6 +955,7 @@ function restartGame() {
   score = 0; lives = 3; level = 1;
   invFrames = 0; dangerFlash = 0; shakeX = 0; shakeY = 0; dangerSfxCooldown = 0;
   activePU = null; bullets = []; particles = []; powerUps = [];
+  bossWaveActive = false; bossWaveDefeated = false; bossAnnounceTimer = 0;
   strands = []; bottles = [];
   spider = null; flea = null; scorpion = null;
   // Clear key state so SPACE restart doesn't immediately fire a bullet
@@ -939,6 +1008,9 @@ function draw() {
   // ⑦ Touch controls overlay
   if (isTouchDevice) drawTouchControls();
 
+  // Boss wave announcement banner
+  if (bossAnnounceTimer > 0) drawBossAnnounce();
+
   ctx.restore();
 }
 
@@ -948,21 +1020,31 @@ function draw() {
 function drawBottles() {
   const _poisonPulse = Math.sin(now / 200) * 0.3 + 0.7; // compute once per frame
   for (const bt of bottles) {
-    const { x, y, poisoned, hp, maxHp } = bt;
-    // ⑤ Poisoned bottles pulse to indicate danger
+    const { x, y, poisoned, hp, maxHp, armored } = bt;
+    // Armored = steel/silver; poisoned = green pulse; normal = gold
     if (poisoned) {
       ctx.fillStyle = `rgba(51,170,80,${_poisonPulse})`;
+    } else if (armored) {
+      ctx.fillStyle = '#9AAABB';
     } else {
       ctx.fillStyle = CLR.gold;
     }
     ctx.beginPath(); ctx.roundRect(x-CS*.28, y-CS*.42, CS*.56, CS*.84, 4); ctx.fill();
-    ctx.fillStyle = poisoned ? '#1c6' : CLR.pink;
+    ctx.fillStyle = poisoned ? '#1c6' : (armored ? '#778899' : CLR.pink);
     ctx.beginPath(); ctx.roundRect(x-CS*.18, y-CS*.52, CS*.36, CS*.14, 2); ctx.fill();
-    ctx.fillStyle = poisoned ? '#0a4' : '#F8EEE540';
+    ctx.fillStyle = poisoned ? '#0a4' : (armored ? '#AABBCC60' : '#F8EEE540');
     ctx.fillRect(x-CS*.26, y-CS*.1, CS*.52, CS*.2);
-    if (hp < maxHp) {
-      ctx.fillStyle = CLR.hot;
+    // Always show hp bar for armored; only show when damaged otherwise
+    if (armored || hp < maxHp) {
+      ctx.fillStyle = armored ? '#778899' : CLR.hot;
       ctx.fillRect(x-CS*.25, y+CS*.38, CS*.5*(hp/maxHp), CS*.06);
+    }
+    // Armored indicator
+    if (armored && !poisoned) {
+      ctx.fillStyle = '#DDEEFF';
+      ctx.font = `bold ${CS*.32}px Arial`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(hp, x, y - CS*.06);
     }
     // ⑤ Poisoned warning symbol
     if (poisoned) {
@@ -976,18 +1058,22 @@ function drawBottles() {
 
 function drawStrand(seg) {
   if (seg.length === 0) return;
+  const isBoss = !!seg.isBoss;
   ctx.lineCap = 'round';
   for (let i = 0; i < seg.length-1; i++) {
-    ctx.strokeStyle = '#FA518570'; ctx.lineWidth = CS*.26;
+    ctx.strokeStyle = isBoss ? '#C8A96E80' : '#FA518570';
+    ctx.lineWidth = isBoss ? CS*.32 : CS*.26;
     ctx.beginPath(); ctx.moveTo(seg[i].x, seg[i].y); ctx.lineTo(seg[i+1].x, seg[i+1].y); ctx.stroke();
   }
   for (let i = seg.length-1; i >= 0; i--) {
     const s = seg[i], isHead = (i === 0);
     const t = now/300 + i*.4;
     const shimmer = Math.sin(t)*.25 + 0.75;
-    const r = CS*.44;
+    const r = isBoss ? CS*.52 : CS*.44;
     ctx.save(); ctx.translate(s.x, s.y);
-    ctx.fillStyle = isHead ? '#FF6BA0' : `rgba(220,55,105,${shimmer})`;
+    ctx.fillStyle = isHead
+      ? (isBoss ? '#FFD700' : '#FF6BA0')
+      : (isBoss ? `rgba(200,150,30,${shimmer})` : `rgba(220,55,105,${shimmer})`);
     ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle = '#FF0D5850'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(0,0,r*.65,.3,Math.PI-.3); ctx.stroke();
@@ -1022,8 +1108,8 @@ function drawPowerUps() {
     p.pulse = (p.pulse || 0) + 0.08;
     const sc = 1 + Math.sin(p.pulse) * 0.12;
     ctx.save(); ctx.translate(p.x, p.y); ctx.scale(sc, sc);
-    const colors = { wide: CLR.gold, rapid: CLR.pink, detangle: CLR.green };
-    const labels = { wide: 'WIDE', rapid: 'FAST', detangle: 'CLR' };
+    const colors = { wide: CLR.gold, rapid: CLR.pink, detangle: CLR.green, toner: '#88FFCC' };
+    const labels = { wide: 'WIDE', rapid: 'FAST', detangle: 'CLR', toner: 'TONR' };
     ctx.fillStyle = colors[p.type] + '30';
     ctx.beginPath(); ctx.arc(0,0,CS*.6,0,Math.PI*2); ctx.fill();
     ctx.fillStyle = colors[p.type];
@@ -1058,7 +1144,7 @@ function drawPlayer() {
     ctx.fillStyle = i%2===0 ? '#017a5b' : '#013d2d';
     ctx.fillRect(-teethW/2+i*(teethW/7), -h*.56, toothW, h*.28);
   }
-  const puColor = activePU ? ({wide:CLR.gold,rapid:CLR.hot,detangle:'#0a8'}[activePU.type]) : CLR.pink;
+  const puColor = activePU ? ({wide:CLR.gold,rapid:CLR.hot,detangle:'#0a8',toner:'#88FFCC'}[activePU.type]) : CLR.pink;
   ctx.fillStyle = puColor;
   ctx.beginPath(); ctx.roundRect(-CS*.12,-h*.72,CS*.24,h*.46,4); ctx.fill();
   ctx.fillStyle = activePU ? '#fff' : CLR.hot;
@@ -1166,6 +1252,25 @@ function drawTouchControls() {
   ctx.fillText('FIRE', W/2, btnY);
 }
 
+function drawBossAnnounce() {
+  const progress = bossAnnounceTimer / BOSS_ANNOUNCE_FRAMES;
+  const alpha = Math.min((1 - progress) * 6, 1) * Math.min(progress * 6, 1);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#171411DD';
+  ctx.fillRect(0, H/2 - 52, W, 104);
+  ctx.fillStyle = CLR.gold;
+  ctx.shadowColor = CLR.gold; ctx.shadowBlur = 18;
+  ctx.font = `900 38px 'Courier New'`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('⚠  BOSS WAVE!', W/2, H/2 - 16);
+  ctx.fillStyle = '#F8EEE5'; ctx.shadowBlur = 0;
+  ctx.font = `bold 13px 'Courier New'`;
+  ctx.fillText('Mega strand incoming — aim for the head!', W/2, H/2 + 22);
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
 // ══════════════════════════════════════════════════════
 //  LEVEL-UP SCREEN
 // ══════════════════════════════════════════════════════
@@ -1202,7 +1307,12 @@ function drawLevelUpScreen() {
 
   ctx.fillStyle = '#F8EEE5BB'; ctx.shadowBlur = 0;
   ctx.font = `14px 'Courier New'`;
-  ctx.fillText(th.sub, W/2, H/2 + 70);
+  ctx.fillText(th.sub, W/2, H/2 + 62);
+
+  ctx.fillStyle = CLR.gold; ctx.shadowColor = CLR.gold; ctx.shadowBlur = 6;
+  ctx.font = `bold 13px 'Courier New'`;
+  ctx.fillText('► ' + th.hint, W/2, H/2 + 85);
+  ctx.shadowBlur = 0;
 
   if ((level-1) % 3 === 0 && level > 1) {
     ctx.fillStyle = CLR.pink; ctx.shadowColor = CLR.pink; ctx.shadowBlur = 15;
@@ -1236,8 +1346,8 @@ const _hudEl = {
 };
 let _hudCache = { score: -1, level: -1, hi: -1, lives: -1, puKey: '' };
 
-const _puLabels = { wide:'WIDE SHOT', rapid:'RAPID FIRE', detangle:'DETANGLER' };
-const _puColors  = { wide: CLR.gold,  rapid: CLR.pink,   detangle: CLR.green };
+const _puLabels = { wide:'WIDE SHOT', rapid:'RAPID FIRE', detangle:'DETANGLER', toner:'TONER' };
+const _puColors  = { wide: CLR.gold,  rapid: CLR.pink,   detangle: CLR.green,  toner:'#88FFCC' };
 
 function updateHUD() {
   if (score !== _hudCache.score) {
