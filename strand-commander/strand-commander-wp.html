@@ -6,7 +6,7 @@
 ═══════════════════════════════════════════════════════ -->
 
 <style>
-#hbbu-sc-shell{width:100%;background:transparent;padding:0;margin:0;overflow:hidden;font-family:'Courier New',monospace;}
+#hbbu-sc-shell{width:100%;background:transparent;padding:0;margin:0;overflow:hidden;font-family:'Courier New',monospace;display:flex;justify-content:center;}
 #hbbu-sc-root{display:flex;flex-direction:column;align-items:center;width:564px;background:#171411;transform-origin:top left;transition:transform .1s ease;flex-shrink:0;padding-top:16px;padding-bottom:10px;}
 #hbbu-sc-logo{margin-bottom:8px;text-align:center;font-size:13px;font-weight:900;letter-spacing:4px;color:#FA5185;text-shadow:0 0 12px rgba(250,81,133,.38);text-transform:uppercase;}
 #hbbu-sc-title{font-size:28px;font-weight:900;letter-spacing:4px;color:#F8EEE5;text-transform:uppercase;text-shadow:0 0 20px #FA5185,0 0 40px #FA5185;margin-bottom:8px;text-align:center;white-space:nowrap;}
@@ -14,7 +14,7 @@
 .hbbu-sc-hi{text-align:center;}
 .hbbu-sc-hl{color:#FA5185;font-size:10px;display:block;letter-spacing:2px;}
 .hbbu-sc-hv{font-size:20px;font-weight:bold;color:#F8EEE5;}
-#hbbu-sc-pubar{height:22px;margin-bottom:4px;font-size:11px;letter-spacing:2px;color:rgba(248,238,229,.67);text-align:center;width:564px;}
+#hbbu-sc-pubar{height:22px;margin-bottom:4px;font-size:11px;letter-spacing:2px;color:rgba(248,238,229,.67);text-align:center;width:100%;max-width:564px;}
 #hbbu-sc-cwrap{position:relative;border:2px solid #FA5185;box-shadow:0 0 30px rgba(250,81,133,.5),0 0 60px rgba(250,81,133,.19);touch-action:none;}
 #hbbu-sc-c{display:block;touch-action:none;}
 #hbbu-sc-ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(23,20,17,.93);color:#F8EEE5;text-align:center;gap:14px;padding:20px;}
@@ -870,15 +870,14 @@ var GAME_NATURAL_W=564, GAME_NATURAL_H=846;
 function scaleGame(){
   var root =document.getElementById('hbbu-sc-root');
   var shell=document.getElementById('hbbu-sc-shell');
-  var avail=document.documentElement.clientWidth||window.innerWidth||GAME_NATURAL_W;
+  var avail=shell.offsetWidth||document.documentElement.clientWidth||GAME_NATURAL_W;
   var scale=Math.min(1,avail/GAME_NATURAL_W);
   root.style.visibility='hidden'; root.style.transform='none';
   var naturalH=root.scrollHeight||GAME_NATURAL_H;
   root.style.visibility='';
-  var offset=Math.max(0,(avail-GAME_NATURAL_W*scale)/2);
   root.style.transform='scale('+scale+')';
-  root.style.transformOrigin='top left';
-  root.style.marginLeft=offset+'px';
+  root.style.transformOrigin='top center';
+  root.style.marginLeft='0';
   var scaledH=Math.ceil(naturalH*scale);
   shell.style.height=scaledH+'px';
   try{ window.parent.postMessage({type:'hbbu-resize',height:scaledH},'*'); }catch(e){}
