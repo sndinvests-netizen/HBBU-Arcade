@@ -25,11 +25,12 @@
   /* ── Shell: transparent, no padding, tight fit ───── */
   #game-shell {
     width: 100%;
-    /* No background here — only #game-root/canvas have the dark bg */
     background: transparent;
     padding: 0;
     margin: 0;
     overflow: hidden;
+    display: flex;
+    justify-content: center;
   }
 
   /* ── Root container — scaled by JS ──────────────────
@@ -591,8 +592,7 @@ function updateStrands() {
 }
 
 function updateDanger() {
-  // Screen shake proportional to danger
-  if (dangerFlash > 20) {
+  if (dangerFlash > 20 && !isTouchDevice) {
     shakeX = (Math.random() - 0.5) * (dangerFlash / 25) * 3;
     shakeY = (Math.random() - 0.5) * (dangerFlash / 25) * 3;
   } else {
@@ -692,6 +692,7 @@ function updateParticles() {
 }
 
 function spawnBurst(x, y, color, count) {
+  if (particles.length > 80) particles.splice(0, particles.length - 80);
   for (let i = 0; i < count; i++) {
     const a = Math.random() * Math.PI * 2;
     const s = Math.random() * 4 + 1;
@@ -986,14 +987,7 @@ function drawStrand(seg) {
     const shimmer = Math.sin(t)*.25 + 0.75;
     const r = CS*.44;
     ctx.save(); ctx.translate(s.x, s.y);
-    const grad = ctx.createRadialGradient(0,0,r*.1,0,0,r);
-    if (isHead) {
-      grad.addColorStop(0, '#FF6BA0'); grad.addColorStop(1, CLR.hot);
-    } else {
-      grad.addColorStop(0, `rgba(250,81,133,${shimmer})`);
-      grad.addColorStop(1, `rgba(190,30,80,${shimmer})`);
-    }
-    ctx.fillStyle = grad;
+    ctx.fillStyle = isHead ? '#FF6BA0' : `rgba(220,55,105,${shimmer})`;
     ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle = '#FF0D5850'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(0,0,r*.65,.3,Math.PI-.3); ctx.stroke();
@@ -1014,15 +1008,12 @@ function drawStrand(seg) {
 }
 
 function drawBullets() {
+  ctx.fillStyle = CLR.hot;
   for (const b of bullets) {
-    const grd = ctx.createLinearGradient(b.x,b.y,b.x,b.y-CS*.7);
-    grd.addColorStop(0,'#FF0D58'); grd.addColorStop(1,'#FA5185');
-    ctx.fillStyle = grd;
     ctx.beginPath(); ctx.arc(b.x,b.y,CS*.15,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle = '#FA518870'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(b.x,b.y+CS*.5); ctx.stroke();
     ctx.fillStyle = '#FF0D5828';
-    ctx.beginPath(); ctx.arc(b.x,b.y,CS*.32,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(b.x,b.y,CS*.28,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = CLR.hot;
   }
 }
 
@@ -1300,20 +1291,17 @@ function scaleGame() {
   const root  = document.getElementById('game-root');
   const shell = document.getElementById('game-shell');
 
-  const avail = document.documentElement.clientWidth || window.innerWidth || GAME_NATURAL_W;
+  const avail = shell.clientWidth || document.documentElement.clientWidth || GAME_NATURAL_W;
   const scale = Math.min(1, avail / GAME_NATURAL_W);
 
-  // Measure actual content height — hide briefly to avoid flicker
   root.style.visibility = 'hidden';
   root.style.transform  = 'none';
   const naturalH = root.scrollHeight || GAME_NATURAL_H;
   root.style.visibility = '';
 
-  // Anchor top-left, center manually
-  const offset = Math.max(0, (avail - GAME_NATURAL_W * scale) / 2);
   root.style.transform       = `scale(${scale})`;
-  root.style.transformOrigin = 'top left';
-  root.style.marginLeft      = offset + 'px';
+  root.style.transformOrigin = 'top center';
+  root.style.marginLeft      = '0';
 
   // Shell height = measured content × scale — pixel perfect, no dead space
   const scaledH = Math.ceil(naturalH * scale);
