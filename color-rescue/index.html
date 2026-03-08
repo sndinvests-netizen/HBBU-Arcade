@@ -1163,9 +1163,6 @@ function resetGame() {
    INIT
    ================================================================ */
 (function init() {
-  // Logo on title screen
-  document.getElementById("hbbu-logo-img").src = "data:image/png;base64," + LOGO_B64;
-
   // Button wiring — addEventListener only, no onclick attrs
   document.getElementById("btn-start").addEventListener("click", resetGame);
   document.getElementById("btn-how").addEventListener("click", function() { showScreen("screen-how"); });
