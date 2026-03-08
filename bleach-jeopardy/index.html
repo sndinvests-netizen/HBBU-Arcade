@@ -36,12 +36,18 @@
 
   html, body {
     height: auto;
-    background: var(--navy);
+    background: transparent;
     color: var(--white);
     font-family: var(--font-body);
     overflow-x: hidden;
+  }
+
+  #game-wrap {
     max-width: 600px;
+    width: 100%;
     margin: 0 auto;
+    background: var(--navy);
+    display: block;
   }
 
   /* ---- SCREENS ---- */
@@ -462,6 +468,7 @@
 </style>
 </head>
 <body>
+<div id="game-wrap">
 
 <!-- ============================================================
      TITLE SCREEN
@@ -1007,5 +1014,6 @@ function toTitleCase(str) {
   return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1));
 }
 </script>
+</div><!-- /game-wrap -->
 </body>
 </html>
