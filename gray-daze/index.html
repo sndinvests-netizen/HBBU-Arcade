@@ -362,15 +362,16 @@
 
 /* ── NEXT BUTTON ────────────────────────────────────── */
 #game-wrap .next-wrap {
-  display: none;
+  display: flex;
+  justify-content: flex-end;
   width: 100%;
   background: var(--green);
   padding: 5px 10px;
   flex-shrink: 0;
+  visibility: hidden;
 }
 #game-wrap .next-wrap.show {
-  display: flex;
-  justify-content: flex-end;
+  visibility: visible;
 }
 #game-wrap .btn-next {
   background: var(--hot-pink);
