@@ -522,6 +522,69 @@
 #game-wrap .btn-replay:hover {
   opacity: 0.88;
 }
+
+/* ── MOBILE RESPONSIVE ──────────────────────────────── */
+@media (max-width: 480px) {
+  #game-wrap {
+    font-size: 13px;
+    border-radius: 0;
+  }
+  #game-wrap .screen {
+    padding: 8px 10px;
+  }
+  #game-wrap #screen-game {
+    padding: 6px 8px 0 8px;
+  }
+  #game-wrap .hbbu-logo-div {
+    height: 42px;
+  }
+  #game-wrap .game-title {
+    font-size: 1.5rem;
+  }
+  #game-wrap .hud-bar {
+    padding: 4px 8px;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  #game-wrap .client-header {
+    margin-bottom: 3px;
+  }
+  #game-wrap .pips-row {
+    margin-bottom: 4px;
+    gap: 3px;
+  }
+  #game-wrap .question-box {
+    padding: 6px 8px;
+    margin-bottom: 4px;
+  }
+  #game-wrap .q-text {
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+  #game-wrap .answer-grid {
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  #game-wrap .answer-btn {
+    padding: 5px 8px;
+    gap: 5px;
+  }
+  #game-wrap .answer-text {
+    font-size: 0.76rem;
+    line-height: 1.3;
+  }
+  #game-wrap .feedback {
+    padding: 5px 8px;
+    font-size: 0.76rem;
+    margin-bottom: 4px;
+  }
+  #game-wrap .next-wrap {
+    padding: 5px 8px;
+  }
+  #game-wrap .scroll-area {
+    padding: 0 2px;
+  }
+}
 </style>
 </head>
 <body>
@@ -651,10 +714,10 @@ var CLIENTS = [
         stageName: "Consultation",
         text: "Renee has 50% gray and wants low-commitment blending with maximum shine. Which product is the best fit for her goal?",
         answers: [
-          "Redken Shades EQ \u2014 acidic demi that deposits with high shine, ideal for up to 50% gray blending",
-          "Schwarzkopf IGORA Vibrance with 13 vol \u2014 stronger pigment deposit for stubborn gray",
-          "Permanent oxidative color with 20 vol \u2014 full coverage, no regrowth line",
-          "Bleach and tone \u2014 lift first, then deposit a silver gloss"
+          "Redken Shades EQ \u2014 acidic demi, high shine, ideal for \u226450% gray",
+          "IGORA Vibrance 13 vol \u2014 stronger deposit for stubborn gray",
+          "Permanent 20 vol \u2014 full coverage, no regrowth line",
+          "Bleach and tone \u2014 lift first, then gloss"
         ],
         correct: 0,
         explanation: "Shades EQ is an acidic demi-permanent mixed with a Processing Solution (not developer). It delivers superior shine and tone on 50% gray or less, making it perfect for Renee\u2019s low-commitment blending goal."
@@ -663,10 +726,10 @@ var CLIENTS = [
         stageName: "Formula Science",
         text: "Shades EQ is described as acidic. What does that mean for how it works on Renee\u2019s hair?",
         answers: [
-          "It lifts the natural pigment before depositing color, creating a lighter base",
-          "It deposits color only \u2014 no pigment shift on natural hair \u2014 and closes the cuticle for shine",
-          "It opens the cuticle with high pH so color penetrates deeper into the cortex",
-          "It neutralizes existing color molecules to reset the hair\u2019s base level"
+          "Lifts natural pigment first, creating a lighter base",
+          "Deposits only, no pigment shift \u2014 closes cuticle for shine",
+          "Opens cuticle with high pH for deeper penetration",
+          "Neutralizes existing color to reset the base"
         ],
         correct: 1,
         explanation: "Shades EQ\u2019s acidic formula means deposit only with no pigment shift on natural hair. The low pH closes the cuticle after depositing tone, which is exactly what creates that glossy, healthy-looking finish clients love."
@@ -677,8 +740,8 @@ var CLIENTS = [
         answers: [
           "6 Volume hydrogen peroxide developer",
           "13 Volume hydrogen peroxide developer",
-          "Redken Processing Solution \u2014 a non-peroxide acidic activator",
-          "20 Volume developer mixed 1:1 with a conditioning mask"
+          "Redken Processing Solution \u2014 acidic, non-peroxide activator",
+          "20 Volume developer mixed with a conditioning mask"
         ],
         correct: 2,
         explanation: "Shades EQ is mixed with Redken Processing Solution, not hydrogen peroxide developer. This is a key differentiator: no traditional developer means the formula stays acidic and deposit-only, protecting hair integrity while adding tone."
@@ -687,10 +750,10 @@ var CLIENTS = [
         stageName: "Gray Blending Strategy",
         text: "What is the defining difference between gray blending and full gray coverage?",
         answers: [
-          "Gray blending uses permanent color at 10 vol to fully mask every silver strand",
-          "Gray blending softens and diffuses the appearance of gray rather than covering it completely, avoiding harsh regrowth lines",
-          "Gray blending requires bleaching the gray strands first to even out porosity",
-          "Gray blending and full coverage are the same technique applied with different timing"
+          "Permanent 10 vol to fully mask every silver strand",
+          "Softens and diffuses gray without full coverage, avoids harsh regrowth lines",
+          "Bleach gray strands first to even out porosity",
+          "Same as full coverage, just different timing"
         ],
         correct: 1,
         explanation: "Gray blending is designed to soften and diffuse the appearance of natural gray rather than covering it completely. This approach avoids harsh regrowth lines, enhances natural grays, and gives Renee the low-maintenance result she wants."
@@ -699,10 +762,10 @@ var CLIENTS = [
         stageName: "Fade & Longevity",
         text: "Renee asks how long her Shades EQ result will last. What is the honest answer about fade?",
         answers: [
-          "Shades EQ lasts 8-10 weeks with no noticeable fade due to its bond-strengthening technology",
-          "Shades EQ is permanent once deposited and requires a color remover to change",
-          "Shades EQ fades noticeably after approximately 15 washes, making it a regular maintenance appointment",
-          "Shades EQ fades only on gray strands, leaving natural hair perfectly toned indefinitely"
+          "Lasts 8\u201310 weeks with no noticeable fade",
+          "Permanent once deposited \u2014 needs color remover to change",
+          "Fades noticeably after ~15 washes \u2014 regular maintenance needed",
+          "Fades on gray only; natural hair stays toned indefinitely"
         ],
         correct: 2,
         explanation: "Shades EQ fades noticeably after approximately 15 washes. This is important to set expectations \u2014 Renee will benefit from regular gloss appointments. Frame it as a feature: it gives her flexibility to evolve her color over time."
@@ -717,10 +780,10 @@ var CLIENTS = [
         stageName: "Consultation",
         text: "Claudette has 75-100% gray that is coarse and resistant. She wants maximum longevity without going permanent. Which product is the best choice?",
         answers: [
-          "Redken Shades EQ with Processing Solution \u2014 acidic formula for maximum shine",
-          "Schwarzkopf IGORA Vibrance \u2014 alkaline demi-permanent with stronger pigment deposit and superior longevity on high gray percentages",
-          "A toning gloss applied over bleached hair to neutralize yellow",
-          "Permanent color with 10 vol developer to avoid lifting while covering"
+          "Redken Shades EQ \u2014 acidic formula for maximum shine",
+          "IGORA Vibrance \u2014 alkaline, stronger deposit, superior longevity on high gray",
+          "Toning gloss over bleached hair to neutralize yellow",
+          "Permanent 10 vol \u2014 cover without lifting"
         ],
         correct: 1,
         explanation: "IGORA Vibrance is alkaline-based, which means it has stronger pigment deposit and longevity \u2014 exactly what 75-100% resistant gray requires. Shades EQ would fade too quickly on Claudette\u2019s dense gray without enough staying power."
@@ -729,10 +792,10 @@ var CLIENTS = [
         stageName: "Formula Science",
         text: "IGORA Vibrance is alkaline. How does this differ from Shades EQ\u2019s acidic formula in terms of how it interacts with the hair?",
         answers: [
-          "Alkaline formula closes the cuticle tighter than acidic formulas, delivering less pigment",
-          "Alkaline pH slightly opens the cuticle to allow deeper pigment penetration, giving stronger deposit and longer wear",
-          "Alkaline formula lifts the hair two full levels before depositing the new shade",
-          "Both products work identically \u2014 pH is a marketing term with no real effect"
+          "Closes the cuticle tighter \u2014 less pigment delivery than acidic",
+          "Slightly opens the cuticle for deeper penetration and longer wear",
+          "Lifts two full levels before depositing the new shade",
+          "Both work identically \u2014 pH is just a marketing term"
         ],
         correct: 1,
         explanation: "IGORA Vibrance\u2019s alkaline pH slightly opens the cuticle, enabling deeper pigment penetration compared to Shades EQ\u2019s acidic, cuticle-closing approach. That deeper deposit is why it performs better and lasts longer on high-percentage gray."
@@ -741,10 +804,10 @@ var CLIENTS = [
         stageName: "Developer & Mix",
         text: "Claudette\u2019s gray strands are particularly stubborn and resistant. Which developer volume should you reach for with IGORA Vibrance to maximize deposit on these strands?",
         answers: [
-          "6 Volume \u2014 standard for demi applications, gentle and sufficient for all gray levels",
-          "13 Volume \u2014 the higher option available with IGORA Vibrance for stubborn, resistant gray",
-          "20 Volume \u2014 standard for permanent color, needed to open resistant cuticles",
-          "40 Volume \u2014 maximum lift, required to break through resistant gray cortex"
+          "6 Volume \u2014 standard for demi, sufficient for all gray levels",
+          "13 Volume \u2014 higher option for stubborn, resistant gray",
+          "20 Volume \u2014 permanent color standard to open resistant cuticles",
+          "40 Volume \u2014 maximum lift through resistant gray cortex"
         ],
         correct: 1,
         explanation: "IGORA Vibrance offers two developer options: 6 Volume for standard gray blending, and 13 Volume for stubborn, resistant gray like Claudette\u2019s. The 13 Volume provides extra cuticle opening without lifting, allowing the pigment to deposit more thoroughly on resistant strands."
@@ -753,10 +816,10 @@ var CLIENTS = [
         stageName: "Gray Coverage Level",
         text: "Claudette is at 75-100% gray. Why does this percentage make such a difference in product selection compared to a client at 50% gray?",
         answers: [
-          "Higher gray percentage means more natural pigment remains, so less artificial pigment is needed",
-          "At 75-100% gray, nearly all strands lack melanin, requiring a product with stronger pigment deposit and better longevity to overcome the natural resistance of unpigmented hair",
-          "Gray percentage only matters for permanent color choices, not demi-permanent formulas",
-          "Higher gray percentage means the hair is more porous, making any product deposit equally well"
+          "More natural pigment remains \u2014 less artificial pigment needed",
+          "Nearly all strands lack melanin \u2014 stronger deposit and longevity needed to overcome resistance",
+          "Only matters for permanent color, not demi-permanents",
+          "More porous hair means any product deposits equally well"
         ],
         correct: 1,
         explanation: "At 75-100% gray, the vast majority of strands have no melanin. Unpigmented hair can be more resistant to color deposit, and any formula must work harder to deliver noticeable, lasting results. This is why IGORA Vibrance outperforms Shades EQ on Claudette\u2019s hair."
@@ -765,10 +828,10 @@ var CLIENTS = [
         stageName: "Fade & Longevity",
         text: "After 15 washes, how does IGORA Vibrance compare to Shades EQ in terms of longevity for Claudette\u2019s high-gray hair?",
         answers: [
-          "Both products fade at the same rate after 15 washes \u2014 longevity is determined by hair porosity alone",
-          "Shades EQ maintains more vibrancy and depth at 15 washes due to its acidic cuticle-sealing action",
-          "IGORA Vibrance maintains superior vibrancy and depth after 15 washes compared to Shades EQ, making it the better choice for clients who want longer-lasting results",
-          "IGORA Vibrance fades faster because its alkaline pH damages the cuticle over multiple washes"
+          "Both fade equally \u2014 longevity depends on porosity alone",
+          "Shades EQ holds more vibrancy due to its cuticle-sealing action",
+          "IGORA Vibrance holds superior vibrancy and depth after 15 washes",
+          "IGORA fades faster \u2014 alkaline pH damages the cuticle over time"
         ],
         correct: 2,
         explanation: "IGORA Vibrance demonstrates superior longevity compared to Shades EQ after 15 washes. Its stronger pigment deposit holds up better through repeated washing cycles, which is critical for Claudette who wants to maximize time between salon visits."
