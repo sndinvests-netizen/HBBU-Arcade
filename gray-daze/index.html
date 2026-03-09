@@ -28,8 +28,10 @@
 #game-wrap {
   max-width: 600px;
   width: 100%;
-  height: auto;
-  overflow: visible;
+  height: 720px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   margin: 0 auto;
   background: var(--green);
   color: var(--cream);
@@ -49,14 +51,15 @@
 }
 #game-wrap .screen.active {
   display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* ── GAME SCREEN fixed-height layout ───────────────── */
 #game-wrap #screen-game {
-  height: 100vh;
   padding: 8px 10px 0 10px;
   overflow: hidden;
-  box-sizing: border-box;
 }
 #game-wrap .scroll-area {
   flex: 1;
